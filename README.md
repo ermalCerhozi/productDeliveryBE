@@ -107,7 +107,3 @@ service.ts file contains all the business logic.
 controller.ts file handles incoming requests and returns responses to the client.
 app.module.ts is the root module of the application. It imports all other modules.
 main.ts is the entry file of the application which sets up and runs the Nest application.
-
-
-
-I have imported the TypeOrmModule in each entity module

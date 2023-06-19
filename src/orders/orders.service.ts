@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DeleteResult, Repository } from 'typeorm';
+import { UpdateResult } from 'typeorm';
 import { Order } from './order.entity';
 
 @Injectable()
@@ -19,26 +20,39 @@ export class OrdersService {
   }
 
   getOrderById(id: string): Promise<Order> {
-    return this.ordersRepository.findOne({ id: parseInt(id, 10) });
+    return this.ordersRepository.findOne({ where: { id: parseInt(id, 10) } });
   }
 
-  updateOrder(id: string, order: Partial<Order>): Promise<void> {
+  updateOrder(id: string, order: Partial<Order>): Promise<UpdateResult> {
     return this.ordersRepository.update(parseInt(id, 10), order);
   }
 
-  deleteOrder(id: string): Promise<void> {
+  deleteOrder(id: string): Promise<DeleteResult> {
     return this.ordersRepository.delete(parseInt(id, 10));
   }
 
   getOrdersByClientId(client_id: string): Promise<Order[]> {
-    return this.ordersRepository.find({ client_id: parseInt(client_id, 10) });
+    return this.ordersRepository
+      .createQueryBuilder('order')
+      .innerJoinAndSelect('order.client', 'client', 'client.id = :clientId', {
+        clientId: parseInt(client_id, 10),
+      })
+      .getMany();
   }
 
   getOrdersBySellerId(seller_id: string): Promise<Order[]> {
-    return this.ordersRepository.find({ seller_id: parseInt(seller_id, 10) });
+    return this.ordersRepository
+      .createQueryBuilder('order')
+      .innerJoinAndSelect('order.seller', 'seller', 'seller.id = :sellerId', {
+        sellerId: parseInt(seller_id, 10),
+      })
+      .getMany();
   }
 
   getOrdersByDate(date: Date): Promise<Order[]> {
-    return this.ordersRepository.find({ order_date: date });
+    return this.ordersRepository
+      .createQueryBuilder('order')
+      .where('order.order_date = :date', { date })
+      .getMany();
   }
 }

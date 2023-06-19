@@ -9,6 +9,7 @@ import {
 } from '@nestjs/common';
 import { OrdersService } from './orders.service';
 import { Order } from './order.entity';
+import { DeleteResult, UpdateResult } from 'typeorm';
 
 @Controller('orders')
 export class OrdersController {
@@ -33,12 +34,12 @@ export class OrdersController {
   updateOrder(
     @Param('id') id: string,
     @Body() order: Partial<Order>,
-  ): Promise<void> {
+  ): Promise<UpdateResult> {
     return this.ordersService.updateOrder(id, order);
   }
 
   @Delete(':id')
-  deleteOrder(@Param('id') id: string): Promise<void> {
+  deleteOrder(@Param('id') id: string): Promise<DeleteResult> {
     return this.ordersService.deleteOrder(id);
   }
 

@@ -18,8 +18,8 @@ export class OrderItemsService {
     return this.orderItemsRepository.find();
   }
 
-  getOrderItemById(id: string): Promise<OrderItem> {
-    return this.orderItemsRepository.findOne(id);
+  getOrderItemById(id: number): Promise<OrderItem> {
+    return this.orderItemsRepository.findOne({ where: { id: id } });
   }
 
   async updateOrderItem(
@@ -34,11 +34,26 @@ export class OrderItemsService {
   }
 
   getOrderItemsByOrderId(orderId: string): Promise<OrderItem[]> {
-    return this.orderItemsRepository.find({ where: { order_id: orderId } });
+    return this.orderItemsRepository
+      .createQueryBuilder('order_item')
+      .innerJoinAndSelect('order_item.order', 'order', 'order.id = :orderId', {
+        orderId: parseInt(orderId, 10),
+      })
+      .getMany();
   }
 
   getOrderItemsByProductId(productId: string): Promise<OrderItem[]> {
-    return this.orderItemsRepository.find({ where: { product_id: productId } });
+    return this.orderItemsRepository
+      .createQueryBuilder('order_item')
+      .innerJoinAndSelect(
+        'order_item.product',
+        'product',
+        'product.id = :productId',
+        {
+          productId: parseInt(productId, 10),
+        },
+      )
+      .getMany();
   }
 
   async updateOrderItemQuantity(id: string, quantity: number): Promise<void> {
