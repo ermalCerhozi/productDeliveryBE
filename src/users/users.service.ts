@@ -30,9 +30,9 @@ export class UsersService {
     return this.usersRepository.save(user);
   }
 
-  async validateUserCredentials(user: Partial<User>): Promise<boolean> {
-    //    Check user's credentials and return boolean result.
-  }
+  // async validateUserCredentials(user: Partial<User>): Promise<boolean> {
+  //   //    Check user's credentials and return boolean result.
+  // }
 
   async changeUserRole(id: string, role: string): Promise<void> {
     await this.usersRepository.update(parseInt(id, 10), { role });

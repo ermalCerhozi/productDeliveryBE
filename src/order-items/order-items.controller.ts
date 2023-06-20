@@ -25,7 +25,7 @@ export class OrderItemsController {
   }
 
   @Get(':id')
-  getOrderItemById(@Param('id') id: string) {
+  getOrderItemById(@Param('id') id: number) {
     return this.orderItemsService.getOrderItemById(id);
   }
 
