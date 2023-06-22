@@ -1,0 +1,63 @@
+CREATE TABLE users (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    first_name VARCHAR(50),
+    last_name VARCHAR(50),
+    nickname VARCHAR(50),
+    phone_number VARCHAR(15),
+    role ENUM('Admin', 'Manager', 'Seller', 'Client') NOT NULL,
+    password VARCHAR(64)
+);
+
+CREATE TABLE products (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    product_name VARCHAR(50),
+    price DECIMAL(8,2),
+    description TEXT,
+    image VARCHAR(255),
+    ingredients TEXT
+);
+
+CREATE TABLE orders (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    client_id INT,
+    seller_id INT,
+    order_date DATE,
+    FOREIGN KEY (client_id) REFERENCES users(id),
+    FOREIGN KEY (seller_id) REFERENCES users(id)
+);
+
+CREATE TABLE order_items (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    order_id INT,
+    product_id INT,
+    quantity INT,
+    FOREIGN KEY (order_id) REFERENCES orders(id),
+    FOREIGN KEY (product_id) REFERENCES products(id)
+);
+
+
+INSERT INTO products (product_name, price)
+VALUES 
+('Masive >', 80),
+('Masive <', 35),
+('Simite', 55),
+('Natyrale', 55),
+('Misri', 55);
+
+
+INSERT INTO users (first_name, last_name, nickname, phone_number, role, password)
+VALUES 
+('Ermal', 'Cerhozi', 'Ermal Cerhozi', '0685218252', 'Admin', SHA2('1234Password5678', 256)),
+('Astrit', 'Cerhozi', 'Astrit Cerhozi', '0684578848', 'Manager', SHA2('1234Password5678', 256)),
+('Shites', 'Shites', 'Shites', '0684578848', 'Seller', SHA2('1234Password5678', 256)),
+('Zenel', 'Emiri', 'Zenelo', '0682960298', 'Client', SHA2('8bQae', 256)),
+('Mentor', 'Gega', 'Mentoro', '0673591003', 'Client', SHA2('7sFDz', 256)),
+('Rremzi', 'Lleshi', 'Rremzio', '0692399803', 'Client', SHA2('h2bS4', 256)),
+('Shefqet', 'Elbasani', 'Qeto', '0697381013', 'Client', SHA2('Ub26p', 256)),
+('Gent', 'Rroshi', 'Gento', '0692508910', 'Client', SHA2('Fb0w4', 256)),
+('Kopshti', 'Numër 1', 'Kopshti Numër 1', '000 000 0000', 'Client', SHA2('yU3CR', 256)),
+('Kopshti', 'Numër 2', 'Kopshti Numër 2', '0698459132', 'Client', SHA2('pgY8d', 256)),
+('Kopshti', 'Numër 3', 'Kopshti Numër 3', '0696340115', 'Client', SHA2('L6PN7', 256)),
+('Çerdhja', 'Krujë', 'Çerdhja Krujë', '0692396310', 'Client', SHA2('3clVZ', 256)),
+('Kopshti', 'FK', 'Kopshti Fushë-Krujë', '0698703258', 'Client', SHA2('Yc7GA', 256)),
+('Spitali', 'Krujë', 'Spitali Krujë', '0682960298', 'Client', SHA2('RaM4I', 256));
