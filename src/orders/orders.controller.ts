@@ -25,9 +25,14 @@ export class OrdersController {
     return this.ordersService.getAllOrders();
   }
 
-  @Get(':id')
-  getOrderById(@Param('id') id: string): Promise<Order> {
-    return this.ordersService.getOrderById(id);
+  // @Get(':id')
+  // getOrderById(@Param('id') id: string): Promise<Order> {
+  //   return this.ordersService.getOrderById(id);
+  // }
+
+  @Get('/:id')
+  getDetailedOrderInformation(@Param('id') id: string) {
+    return this.ordersService.getDetailedOrderInformation(id);
   }
 
   @Put(':id')

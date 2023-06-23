@@ -16,7 +16,9 @@ export class OrdersService {
   }
 
   getAllOrders(): Promise<Order[]> {
-    return this.ordersRepository.find();
+    return this.ordersRepository.find({
+      relations: ['client', 'seller', 'order_items', 'order_items.product'],
+    });
   }
 
   getOrderById(id: string): Promise<Order> {
@@ -54,5 +56,16 @@ export class OrdersService {
       .createQueryBuilder('order')
       .where('order.order_date = :date', { date })
       .getMany();
+  }
+
+  getDetailedOrderInformation(orderId: string): Promise<Order> {
+    return this.ordersRepository
+      .createQueryBuilder('order')
+      .leftJoinAndSelect('order.client', 'client')
+      .leftJoinAndSelect('order.seller', 'seller')
+      .leftJoinAndSelect('order.order_items', 'order_items')
+      .leftJoinAndSelect('order_items.product', 'product')
+      .where('order.id = :orderId', { orderId: parseInt(orderId, 10) })
+      .getOne();
   }
 }
