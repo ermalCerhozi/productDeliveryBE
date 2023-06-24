@@ -18,6 +18,12 @@ export class UsersService {
     return this.usersRepository.findOne({ where: { id: id } });
   }
 
+  getUserByPhoneNumber(phone_number: string): Promise<User> {
+    return this.usersRepository.findOne({
+      where: { phone_number: phone_number },
+    });
+  }
+
   async deleteUserById(id: string): Promise<void> {
     await this.usersRepository.delete(parseInt(id, 10));
   }
@@ -28,14 +34,6 @@ export class UsersService {
 
   async createUser(user: User): Promise<User> {
     return this.usersRepository.save(user);
-  }
-
-  // async validateUserCredentials(user: Partial<User>): Promise<boolean> {
-  //   //    Check user's credentials and return boolean result.
-  // }
-
-  async changeUserRole(id: string, role: string): Promise<void> {
-    await this.usersRepository.update(parseInt(id, 10), { role });
   }
 
   async resetUserPassword(id: string, newPassword: string): Promise<void> {

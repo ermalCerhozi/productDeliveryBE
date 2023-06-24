@@ -1,10 +1,14 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
+import * as cookieParser from 'cookie-parser';
 
-//TODO: Restrict which origins are allowed by passing an options object to enableCors().
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  app.enableCors(); // this enables CORS
+  app.use(cookieParser());
+  app.enableCors({
+    origin: 'http://localhost:4200',
+    credentials: true,
+  });
   await app.listen(3000);
 }
 bootstrap();

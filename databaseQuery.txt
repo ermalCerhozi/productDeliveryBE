@@ -61,3 +61,6 @@ VALUES
 ('Çerdhja', 'Krujë', 'Çerdhja Krujë', '0692396310', 'Client', SHA2('3clVZ', 256)),
 ('Kopshti', 'FK', 'Kopshti Fushë-Krujë', '0698703258', 'Client', SHA2('Yc7GA', 256)),
 ('Spitali', 'Krujë', 'Spitali Krujë', '0682960298', 'Client', SHA2('RaM4I', 256));
+
+
+TODO: Set phone number as unique.
