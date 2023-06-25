@@ -18,10 +18,14 @@ export class UsersService {
     return this.usersRepository.findOne({ where: { id: id } });
   }
 
-  getUserByPhoneNumber(phone_number: string): Promise<User> {
+  async getUserByPhoneNumber(phone_number: string): Promise<User> {
     return this.usersRepository.findOne({
       where: { phone_number: phone_number },
     });
+  }
+
+  async findOne(condition: any): Promise<User> {
+    return this.usersRepository.findOne(condition);
   }
 
   async deleteUserById(id: string): Promise<void> {
@@ -34,12 +38,5 @@ export class UsersService {
 
   async createUser(user: User): Promise<User> {
     return this.usersRepository.save(user);
-  }
-
-  async resetUserPassword(id: string, newPassword: string): Promise<void> {
-    // Encrypt the password before saving, omitted for brevity.
-    await this.usersRepository.update(parseInt(id, 10), {
-      password: newPassword,
-    });
   }
 }

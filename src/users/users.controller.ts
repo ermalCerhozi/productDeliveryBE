@@ -9,6 +9,7 @@ import {
   BadRequestException,
   Res,
   Req,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { Response, Request } from 'express';
 import { UsersService } from './users.service';
@@ -66,7 +67,7 @@ export class UsersController {
     @Body('password') password: string,
     @Res({ passthrough: true }) response: Response, // we use passthrough: true to pass the response to the frontend
   ) {
-    const user = await this.usersService.getUserByPhoneNumber(phone_number);
+    const user = await this.usersService.findOne({ where: { phone_number } });
 
     if (!user) {
       throw new BadRequestException('User not found');
@@ -88,13 +89,32 @@ export class UsersController {
   // Get the authenticated user
   @Get('user')
   async user(@Req() request: Request) {
-    const cookie = request.cookies['jwt'];
+    try {
+      const cookie = request.cookies['jwt'];
+      const data = await this.jwtService.verifyAsync(cookie);
 
-    if (!cookie) {
-      throw new BadRequestException('No JWT token found in cookie');
+      if (!data) {
+        throw new UnauthorizedException();
+      }
+
+      const user = await this.usersService.findOne({
+        where: { id: data['id'] },
+      });
+
+      const { password, ...result } = user;
+
+      return result;
+    } catch (e) {
+      throw new UnauthorizedException('No JWT token found in cookie');
     }
+  }
 
-    // TODO: decode this JWT and return the actual user object associated with it.
-    return cookie;
+  @Post('logout')
+  async logout(@Res({ passthrough: true }) response: Response) {
+    response.clearCookie('jwt');
+
+    return {
+      message: 'success',
+    };
   }
 }
