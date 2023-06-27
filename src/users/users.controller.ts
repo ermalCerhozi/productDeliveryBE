@@ -37,15 +37,10 @@ export class UsersController {
     return this.usersService.getAllUsers();
   }
 
-  @Get(':id')
+  @Get('getUser:id')
   async getUserById(@Param('id') id: number): Promise<User> {
     return this.usersService.getUserById(id);
   }
-
-  // @Get(':phone_number')
-  // async getUserByPhoneNumber(@Param('phone_number') phone_number: string): Promise<User> {
-  //   return this.usersService.getUserByPhoneNumber(phone_number);
-  // }
 
   @Put(':id')
   async updateUserDetails(
@@ -82,24 +77,24 @@ export class UsersController {
     response.cookie('jwt', jwt, { httpOnly: true }); // we use httpOnly: true so the frontend cant access the jwt
 
     return {
-      message: 'success',
+      message: 'SUCCESS: Logged in',
     };
   }
 
   // Get the authenticated user
-  @Get('user')
+  @Get('loggedInUser')
   async user(@Req() request: Request) {
     try {
       const cookie = request.cookies['jwt'];
       const data = await this.jwtService.verifyAsync(cookie);
 
-      if (!data) {
-        throw new UnauthorizedException();
-      }
-
       const user = await this.usersService.findOne({
         where: { id: data['id'] },
       });
+
+      if (!user) {
+        throw new UnauthorizedException('User not found');
+      }
 
       const { password, ...result } = user;
 
@@ -114,7 +109,7 @@ export class UsersController {
     response.clearCookie('jwt');
 
     return {
-      message: 'success',
+      message: 'SUCCESS: Logged out',
     };
   }
 }
