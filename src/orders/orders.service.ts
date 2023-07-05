@@ -3,16 +3,61 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { DeleteResult, Repository } from 'typeorm';
 import { UpdateResult } from 'typeorm';
 import { Order } from './order.entity';
+import { OrderItem } from '../order-items/orderItem.entity';
+import { Product } from '../products/product.entity';
+import { log } from 'console';
 
 @Injectable()
 export class OrdersService {
   constructor(
     @InjectRepository(Order)
     private ordersRepository: Repository<Order>,
+    @InjectRepository(OrderItem)
+    private orderItemsRepository: Repository<OrderItem>,
+    @InjectRepository(Product)
+    private productsRepository: Repository<Product>,
   ) {}
 
-  createOrder(order: Order): Promise<Order> {
-    return this.ordersRepository.save(order);
+  async createOrder(orderData: any): Promise<Order> {
+    const { client, seller, order_items } = orderData;
+
+    const order_date = new Date();
+
+    // Create and save the order
+    const order: Order = await this.ordersRepository.save({
+      order_date,
+      client,
+      seller,
+    });
+
+    console.log('order', order);
+    // Loop  through the orderitems, create and save them
+    for (const item of order_items) {
+      const { quantity, product } = item;
+
+      console.log('item', item);
+      // Ensure the product exists
+      const productEntity = await this.productsRepository.findOne({
+        where: { id: product.id },
+      });
+      if (!productEntity) {
+        throw new Error(`Product with ID ${product} not found`);
+      }
+      console.log('productEntity', productEntity);
+      const orderItem = this.orderItemsRepository.create({
+        order: order,
+        product: productEntity,
+        quantity,
+      });
+
+      await this.orderItemsRepository.save(orderItem);
+    }
+
+    // Return the newly created order
+    return this.ordersRepository.findOne({
+      where: { id: order.id },
+      relations: ['order_items', 'order_items.product'],
+    });
   }
 
   getAllOrders(): Promise<Order[]> {
@@ -25,8 +70,45 @@ export class OrdersService {
     return this.ordersRepository.findOne({ where: { id: parseInt(id, 10) } });
   }
 
-  updateOrder(id: string, order: Partial<Order>): Promise<UpdateResult> {
-    return this.ordersRepository.update(parseInt(id, 10), order);
+  async updateOrder(id: string, order: Partial<Order>): Promise<any> {
+    const { order_date, client, seller, order_items } = order;
+
+    const updatedOrder: UpdateResult = await this.ordersRepository.update(
+      parseInt(id, 10),
+      {
+        order_date,
+        client,
+        seller,
+      },
+    );
+
+    for (const item of order_items) {
+      const { id: itemId, quantity, product } = item;
+
+      if (itemId) {
+        // If item has an ID, it's an existing order item and needs to be updated
+        await this.orderItemsRepository.update(itemId, { quantity, product });
+      } else {
+        // If item does not have an ID, it's a new order item and needs to be created
+        // Ensure the product exists
+        const productEntity = await this.productsRepository.findOne({
+          where: { id: product.id },
+        });
+        if (!productEntity) {
+          throw new Error(`Product with ID ${product} not found`);
+        }
+
+        const newOrderItem = this.orderItemsRepository.create({
+          order: { id: parseInt(id, 10) }, // associate with the order
+          product: productEntity,
+          quantity,
+        });
+
+        await this.orderItemsRepository.save(newOrderItem);
+      }
+    }
+
+    return updatedOrder;
   }
 
   deleteOrder(id: string): Promise<DeleteResult> {

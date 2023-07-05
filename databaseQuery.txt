@@ -62,5 +62,13 @@ VALUES
 ('Kopshti', 'FK', 'Kopshti Fushë-Krujë', '0698703258', 'Client', SHA2('Yc7GA', 256)),
 ('Spitali', 'Krujë', 'Spitali Krujë', '0682960298', 'Client', SHA2('RaM4I', 256));
 
+INSERT INTO orders(client_id, seller_id, order_date) 
+VALUES (4, 3, '2023-06-23');
+SET @order_id = LAST_INSERT_ID();
+INSERT INTO order_items(order_id, product_id, quantity) 
+VALUES 
+(@order_id, 1, 5),
+(@order_id, 2, 3),
+(@order_id, 3, 4);
 
 TODO: Set phone number as unique.

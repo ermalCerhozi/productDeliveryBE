@@ -76,9 +76,7 @@ export class UsersController {
 
     response.cookie('jwt', jwt, { httpOnly: true }); // we use httpOnly: true so the frontend cant access the jwt
 
-    return {
-      message: 'SUCCESS: Logged in',
-    };
+    return user;
   }
 
   // Get the authenticated user
