@@ -5,7 +5,6 @@ import { UpdateResult } from 'typeorm';
 import { Order } from './order.entity';
 import { OrderItem } from '../order-items/orderItem.entity';
 import { Product } from '../products/product.entity';
-import { log } from 'console';
 
 @Injectable()
 export class OrdersService {
@@ -21,29 +20,31 @@ export class OrdersService {
   async createOrder(orderData: any): Promise<Order> {
     const { client, seller, order_items } = orderData;
 
-    const order_date = new Date();
-
     // Create and save the order
-    const order: Order = await this.ordersRepository.save({
-      order_date,
-      client,
-      seller,
-    });
+    let order: Order = new Order();
+    order.client = client;
+    order.seller = seller;
 
-    console.log('order', order);
-    // Loop  through the orderitems, create and save them
+    order = await this.ordersRepository.save(order);
+
+    let total_price = 0; // Initialize total_price
+
+    // Loop  through the order_items, create and save them
     for (const item of order_items) {
       const { quantity, product } = item;
 
-      console.log('item', item);
       // Ensure the product exists
       const productEntity = await this.productsRepository.findOne({
-        where: { id: product.id },
+        where: { id: product },
       });
+
       if (!productEntity) {
-        throw new Error(`Product with ID ${product} not found`);
+        throw new Error(`Product with ID ${product} not found`); // use product directly as an ID
       }
-      console.log('productEntity', productEntity);
+
+      // Calculate total_price
+      total_price += productEntity.price * quantity;
+
       const orderItem = this.orderItemsRepository.create({
         order: order,
         product: productEntity,
@@ -52,6 +53,10 @@ export class OrdersService {
 
       await this.orderItemsRepository.save(orderItem);
     }
+
+    // Update the total_price of the order
+    order.total_price = total_price;
+    await this.ordersRepository.save(order);
 
     // Return the newly created order
     return this.ordersRepository.findOne({
@@ -71,33 +76,40 @@ export class OrdersService {
   }
 
   async updateOrder(id: string, order: Partial<Order>): Promise<any> {
-    const { order_date, client, seller, order_items } = order;
+    const { client, seller, order_items } = order;
+
+    let total_price = 0; // Initialize total_price
 
     const updatedOrder: UpdateResult = await this.ordersRepository.update(
       parseInt(id, 10),
       {
-        order_date,
         client,
         seller,
       },
     );
-
     for (const item of order_items) {
       const { id: itemId, quantity, product } = item;
 
+      // Here, ensure that product is unique for each order_item
+      const productEntity = await this.productsRepository.findOne({
+        where: { id: Number(product) },
+      });
+
+      if (!productEntity) {
+        throw new Error(`Product with ID ${product} not found`);
+      }
+
+      // Calculate total_price
+      total_price += productEntity.price * quantity;
+
       if (itemId) {
         // If item has an ID, it's an existing order item and needs to be updated
-        await this.orderItemsRepository.update(itemId, { quantity, product });
+        await this.orderItemsRepository.update(itemId, {
+          quantity,
+          product: productEntity,
+        });
       } else {
         // If item does not have an ID, it's a new order item and needs to be created
-        // Ensure the product exists
-        const productEntity = await this.productsRepository.findOne({
-          where: { id: product.id },
-        });
-        if (!productEntity) {
-          throw new Error(`Product with ID ${product} not found`);
-        }
-
         const newOrderItem = this.orderItemsRepository.create({
           order: { id: parseInt(id, 10) }, // associate with the order
           product: productEntity,
@@ -108,10 +120,23 @@ export class OrdersService {
       }
     }
 
-    return updatedOrder;
+    // Update the total_price of the order
+    await this.ordersRepository.update(parseInt(id, 10), { total_price });
+
+    return this.ordersRepository.findOne({
+      where: { id: parseInt(id, 10) },
+      relations: ['order_items', 'order_items.product'],
+    });
   }
 
-  deleteOrder(id: string): Promise<DeleteResult> {
+  async deleteOrder(id: string): Promise<DeleteResult> {
+    // first, find all OrderItem entities with the specified Order ID and delete them
+    const items = await this.orderItemsRepository.find({
+      where: { order: { id: parseInt(id, 10) } },
+    });
+    await this.orderItemsRepository.remove(items);
+
+    // then, delete the Order
     return this.ordersRepository.delete(parseInt(id, 10));
   }
 
@@ -133,21 +158,39 @@ export class OrdersService {
       .getMany();
   }
 
-  getOrdersByDate(date: Date): Promise<Order[]> {
-    return this.ordersRepository
-      .createQueryBuilder('order')
-      .where('order.order_date = :date', { date })
-      .getMany();
-  }
+  async getFilteredOrders(filters: any): Promise<Order[]> {
+    const query = this.ordersRepository.createQueryBuilder('order');
 
-  getDetailedOrderInformation(orderId: string): Promise<Order> {
-    return this.ordersRepository
-      .createQueryBuilder('order')
-      .leftJoinAndSelect('order.client', 'client')
-      .leftJoinAndSelect('order.seller', 'seller')
-      .leftJoinAndSelect('order.order_items', 'order_items')
-      .leftJoinAndSelect('order_items.product', 'product')
-      .where('order.id = :orderId', { orderId: parseInt(orderId, 10) })
-      .getOne();
+    // Join the related entities
+    query.leftJoinAndSelect('order.client', 'client');
+    query.leftJoinAndSelect('order.seller', 'seller');
+    query.leftJoinAndSelect('order.order_items', 'order_items');
+    query.leftJoinAndSelect('order_items.product', 'product');
+
+    console.log('filters', filters);
+
+    if (filters.startDate && filters.endDate) {
+      const startDate = new Date(filters.startDate).toISOString();
+      const endDate = new Date(filters.endDate).toISOString();
+
+      query.andWhere('order.created_at BETWEEN :startDate AND :endDate', {
+        startDate,
+        endDate,
+      });
+    }
+
+    if (filters.clientId) {
+      query.andWhere('order.client_id = :clientId', {
+        clientId: filters.clientId,
+      });
+    }
+
+    if (filters.sellerId) {
+      query.andWhere('order.seller_id = :sellerId', {
+        sellerId: filters.sellerId,
+      });
+    }
+
+    return query.getMany();
   }
 }

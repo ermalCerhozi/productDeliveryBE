@@ -6,6 +6,7 @@ import {
   Delete,
   Param,
   Body,
+  Query,
 } from '@nestjs/common';
 import { OrdersService } from './orders.service';
 import { Order } from './order.entity';
@@ -23,16 +24,6 @@ export class OrdersController {
   @Get()
   getAllOrders(): Promise<Order[]> {
     return this.ordersService.getAllOrders();
-  }
-
-  // @Get(':id')
-  // getOrderById(@Param('id') id: string): Promise<Order> {
-  //   return this.ordersService.getOrderById(id);
-  // }
-
-  @Get('/:id')
-  getDetailedOrderInformation(@Param('id') id: string) {
-    return this.ordersService.getDetailedOrderInformation(id);
   }
 
   @Put(':id')
@@ -58,9 +49,16 @@ export class OrdersController {
     return this.ordersService.getOrdersBySellerId(sellerId);
   }
 
-  @Get('date/:date')
-  getOrdersByDate(@Param('date') dateString: string): Promise<Order[]> {
-    const date = new Date(dateString);
-    return this.ordersService.getOrdersByDate(date);
+  @Get('filter')
+  getFilteredOrders(
+    @Query()
+    filters: {
+      startDate?: Date;
+      endDate?: Date;
+      clientId?: number;
+      sellerId?: number;
+    },
+  ): Promise<Order[]> {
+    return this.ordersService.getFilteredOrders(filters);
   }
 }

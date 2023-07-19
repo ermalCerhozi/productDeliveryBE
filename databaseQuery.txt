@@ -1,39 +1,84 @@
-CREATE TABLE users (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    first_name VARCHAR(50),
-    last_name VARCHAR(50),
-    nickname VARCHAR(50),
-    phone_number VARCHAR(15),
-    role ENUM('Admin', 'Manager', 'Seller', 'Client') NOT NULL,
-    password VARCHAR(64)
-);
 
-CREATE TABLE products (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    product_name VARCHAR(50),
-    price DECIMAL(8,2),
-    description TEXT,
-    image VARCHAR(255),
-    ingredients TEXT
-);
+--
+-- Table structure for table `orders`
+--
 
-CREATE TABLE orders (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    client_id INT,
-    seller_id INT,
-    order_date DATE,
-    FOREIGN KEY (client_id) REFERENCES users(id),
-    FOREIGN KEY (seller_id) REFERENCES users(id)
-);
+CREATE TABLE `orders` (
+  `id` int NOT NULL,
+  `client_id` int DEFAULT NULL,
+  `seller_id` int DEFAULT NULL,
+  `total_price` decimal(8,2) NOT NULL DEFAULT 0.00;
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+)
 
-CREATE TABLE order_items (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    order_id INT,
-    product_id INT,
-    quantity INT,
-    FOREIGN KEY (order_id) REFERENCES orders(id),
-    FOREIGN KEY (product_id) REFERENCES products(id)
-);
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `order_items`
+--
+
+CREATE TABLE `order_items` (
+  `id` int NOT NULL,
+  `order_id` int DEFAULT NULL,
+  `product_id` int DEFAULT NULL,
+  `quantity` int NOT NULL
+)
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `products`
+--
+
+CREATE TABLE `products` (
+  `id` int NOT NULL,
+  `product_name` varchar(50) NOT NULL,
+  `price` decimal(8,2) NOT NULL,
+  `description` text,
+  `image` varchar(255) DEFAULT NULL,
+  `ingredients` text
+)
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `users`
+--
+
+CREATE TABLE `users` (
+  `id` int NOT NULL,
+  `first_name` varchar(50) NOT NULL,
+  `last_name` varchar(50) NOT NULL,
+  `nickname` varchar(50) NOT NULL,
+  `phone_number` varchar(15) NOT NULL,
+  `role` enum('Admin','Manager','Seller','Client') NOT NULL,
+  `password` varchar(64) NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+)
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `payments`
+--
+
+CREATE TABLE `payments` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `order_id` int DEFAULT NULL,
+  `user_id` int DEFAULT NULL,
+  `amount` decimal(8,2) NOT NULL,
+  `method` enum('Credit Card','Debit Card','Cash','Other') NOT NULL,
+  `status` enum('Pending','Completed','Failed') NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  FOREIGN KEY (`order_id`) REFERENCES `orders`(`id`),
+  FOREIGN KEY (`user_id`) REFERENCES `users`(`id`)
+)
+
+-- --------------------------------------------------------
 
 
 INSERT INTO products (product_name, price)
@@ -62,8 +107,8 @@ VALUES
 ('Kopshti', 'FK', 'Kopshti Fushë-Krujë', '0698703258', 'Client', SHA2('Yc7GA', 256)),
 ('Spitali', 'Krujë', 'Spitali Krujë', '0682960298', 'Client', SHA2('RaM4I', 256));
 
-INSERT INTO orders(client_id, seller_id, order_date) 
-VALUES (4, 3, '2023-06-23');
+INSERT INTO orders(client_id, seller_id) 
+VALUES (4, 3);
 SET @order_id = LAST_INSERT_ID();
 INSERT INTO order_items(order_id, product_id, quantity) 
 VALUES 
@@ -72,3 +117,4 @@ VALUES
 (@order_id, 3, 4);
 
 TODO: Set phone number as unique.
+TODO: Orders table should be named just Order.

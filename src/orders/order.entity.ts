@@ -11,6 +11,16 @@ import { OrderItem } from '../order-items/orderItem.entity';
 
 @Entity('orders')
 export class Order {
+  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  created_at: Date;
+
+  @Column({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+    onUpdate: 'CURRENT_TIMESTAMP',
+  })
+  updated_at: Date;
+
   @PrimaryGeneratedColumn()
   id: number;
 
@@ -25,6 +35,6 @@ export class Order {
   @OneToMany(() => OrderItem, (orderItem) => orderItem.order)
   order_items: OrderItem[];
 
-  @Column('date')
-  order_date: Date;
+  @Column({ type: 'decimal', precision: 8, scale: 2, default: 0.0 })
+  total_price: number;
 }
