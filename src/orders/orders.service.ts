@@ -31,7 +31,7 @@ export class OrdersService {
 
     // Loop  through the order_items, create and save them
     for (const item of order_items) {
-      const { quantity, product } = item;
+      const { quantity, returned_quantity, product } = item;
 
       // Ensure the product exists
       const productEntity = await this.productsRepository.findOne({
@@ -43,12 +43,13 @@ export class OrdersService {
       }
 
       // Calculate total_price
-      total_price += productEntity.price * quantity;
+      total_price += productEntity.price * (quantity - returned_quantity);
 
       const orderItem = this.orderItemsRepository.create({
         order: order,
         product: productEntity,
         quantity,
+        returned_quantity,
       });
 
       await this.orderItemsRepository.save(orderItem);
@@ -76,19 +77,19 @@ export class OrdersService {
   }
 
   async updateOrder(id: string, order: Partial<Order>): Promise<any> {
-    const { client, seller, order_items } = order;
-
-    let total_price = 0; // Initialize total_price
+    const { client, order_items } = order;
 
     const updatedOrder: UpdateResult = await this.ordersRepository.update(
       parseInt(id, 10),
       {
         client,
-        seller,
       },
     );
+
+    let total_price = 0; // Initialize total_price
+
     for (const item of order_items) {
-      const { id: itemId, quantity, product } = item;
+      const { id: itemId, quantity, returned_quantity, product } = item;
 
       // Here, ensure that product is unique for each order_item
       const productEntity = await this.productsRepository.findOne({
@@ -100,12 +101,13 @@ export class OrdersService {
       }
 
       // Calculate total_price
-      total_price += productEntity.price * quantity;
+      total_price += productEntity.price * (quantity - returned_quantity);
 
       if (itemId) {
         // If item has an ID, it's an existing order item and needs to be updated
         await this.orderItemsRepository.update(itemId, {
           quantity,
+          returned_quantity,
           product: productEntity,
         });
       } else {
@@ -114,6 +116,7 @@ export class OrdersService {
           order: { id: parseInt(id, 10) }, // associate with the order
           product: productEntity,
           quantity,
+          returned_quantity,
         });
 
         await this.orderItemsRepository.save(newOrderItem);
@@ -123,10 +126,15 @@ export class OrdersService {
     // Update the total_price of the order
     await this.ordersRepository.update(parseInt(id, 10), { total_price });
 
-    return this.ordersRepository.findOne({
+    const orderWithRelations = await this.ordersRepository.findOne({
       where: { id: parseInt(id, 10) },
       relations: ['order_items', 'order_items.product'],
     });
+
+    return {
+      updatedOrder,
+      orderWithRelations,
+    };
   }
 
   async deleteOrder(id: string): Promise<DeleteResult> {
