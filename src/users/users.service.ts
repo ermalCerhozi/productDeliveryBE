@@ -36,7 +36,17 @@ export class UsersService {
     await this.usersRepository.update(parseInt(id, 10), user);
   }
 
+  async doesEmailExist(email: string): Promise<boolean> {
+    const user = await this.usersRepository.findOne({
+        where: { email: email },
+    });
+    return !!user;
+}
+
   async createUser(user: User): Promise<User> {
+    if (await this.doesEmailExist(user.email)) {
+        throw new Error('Email already exists!');
+    }
     return this.usersRepository.save(user);
   }
 }

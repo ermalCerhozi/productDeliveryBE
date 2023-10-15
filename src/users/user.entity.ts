@@ -25,6 +25,9 @@ export class User {
   @Column({ length: 50 })
   nickname: string;
 
+  @Column({ length: 100 })
+  email: string;
+
   @Column({ length: 15 })
   phone_number: string;
 
