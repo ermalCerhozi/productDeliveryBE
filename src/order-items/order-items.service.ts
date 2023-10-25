@@ -1,7 +1,7 @@
-import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { OrderItem } from './orderItem.entity';
+import { Injectable } from '@nestjs/common'
+import { InjectRepository } from '@nestjs/typeorm'
+import { Repository } from 'typeorm'
+import { OrderItem } from './orderItem.entity'
 
 @Injectable()
 export class OrderItemsService {
@@ -11,26 +11,26 @@ export class OrderItemsService {
   ) {}
 
   createOrderItem(orderItem: OrderItem): Promise<OrderItem> {
-    return this.orderItemsRepository.save(orderItem);
+    return this.orderItemsRepository.save(orderItem)
   }
 
   getAllOrderItems(): Promise<OrderItem[]> {
-    return this.orderItemsRepository.find();
+    return this.orderItemsRepository.find()
   }
 
   getOrderItemById(id: number): Promise<OrderItem> {
-    return this.orderItemsRepository.findOne({ where: { id: id } });
+    return this.orderItemsRepository.findOne({ where: { id: id } })
   }
 
   async updateOrderItem(
     id: string,
     orderItem: Partial<OrderItem>,
   ): Promise<void> {
-    await this.orderItemsRepository.update(id, orderItem);
+    await this.orderItemsRepository.update(id, orderItem)
   }
 
   async deleteOrderItem(id: string): Promise<void> {
-    await this.orderItemsRepository.delete(id);
+    await this.orderItemsRepository.delete(id)
   }
 
   getOrderItemsByOrderId(orderId: string): Promise<OrderItem[]> {
@@ -39,7 +39,7 @@ export class OrderItemsService {
       .innerJoinAndSelect('order_item.order', 'order', 'order.id = :orderId', {
         orderId: parseInt(orderId, 10),
       })
-      .getMany();
+      .getMany()
   }
 
   getOrderItemsByProductId(productId: string): Promise<OrderItem[]> {
@@ -53,10 +53,10 @@ export class OrderItemsService {
           productId: parseInt(productId, 10),
         },
       )
-      .getMany();
+      .getMany()
   }
 
   async updateOrderItemQuantity(id: string, quantity: number): Promise<void> {
-    await this.orderItemsRepository.update(id, { quantity });
+    await this.orderItemsRepository.update(id, { quantity })
   }
 }

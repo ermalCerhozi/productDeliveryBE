@@ -7,10 +7,10 @@ import {
   Param,
   Body,
   Query,
-} from '@nestjs/common';
-import { OrdersService } from './orders.service';
-import { Order } from './order.entity';
-import { DeleteResult, UpdateResult } from 'typeorm';
+} from '@nestjs/common'
+import { OrdersService } from './orders.service'
+import { Order } from './order.entity'
+import { DeleteResult, UpdateResult } from 'typeorm'
 
 @Controller('orders')
 export class OrdersController {
@@ -18,12 +18,12 @@ export class OrdersController {
 
   @Post()
   createOrder(@Body() order: Order): Promise<Order> {
-    return this.ordersService.createOrder(order);
+    return this.ordersService.createOrder(order)
   }
 
   @Get()
   getAllOrders(): Promise<Order[]> {
-    return this.ordersService.getAllOrders();
+    return this.ordersService.getAllOrders()
   }
 
   @Put(':id')
@@ -31,35 +31,35 @@ export class OrdersController {
     @Param('id') id: string,
     @Body() order: Partial<Order>,
   ): Promise<UpdateResult> {
-    return this.ordersService.updateOrder(id, order);
+    return this.ordersService.updateOrder(id, order)
   }
 
   @Delete(':id')
   deleteOrder(@Param('id') id: string): Promise<DeleteResult> {
-    return this.ordersService.deleteOrder(id);
+    return this.ordersService.deleteOrder(id)
   }
 
   @Get('client/:clientId')
   getOrdersByClientId(@Param('clientId') clientId: string): Promise<Order[]> {
-    return this.ordersService.getOrdersByClientId(clientId);
+    return this.ordersService.getOrdersByClientId(clientId)
   }
 
   @Get('seller/:sellerId')
   getOrdersBySellerId(@Param('sellerId') sellerId: string): Promise<Order[]> {
-    return this.ordersService.getOrdersBySellerId(sellerId);
+    return this.ordersService.getOrdersBySellerId(sellerId)
   }
 
   @Get('filter')
   getFilteredOrders(
     @Query()
     filters: {
-      startDate?: Date;
-      endDate?: Date;
-      clientId?: number;
-      sellerId?: number;
+      startDate?: Date
+      endDate?: Date
+      clientId?: number
+      sellerId?: number
     },
   ): Promise<Order[]> {
-    return this.ordersService.getFilteredOrders(filters);
+    return this.ordersService.getFilteredOrders(filters)
   }
 
   @Get('admin/monthly-sales')

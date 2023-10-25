@@ -6,9 +6,9 @@ import {
   Delete,
   Body,
   Param,
-} from '@nestjs/common';
-import { OrderItemsService } from './order-items.service';
-import { OrderItem } from './orderItem.entity';
+} from '@nestjs/common'
+import { OrderItemsService } from './order-items.service'
+import { OrderItem } from './orderItem.entity'
 
 @Controller('order-items')
 export class OrderItemsController {
@@ -16,17 +16,17 @@ export class OrderItemsController {
 
   @Post()
   createOrderItem(@Body() orderItem: OrderItem) {
-    return this.orderItemsService.createOrderItem(orderItem);
+    return this.orderItemsService.createOrderItem(orderItem)
   }
 
   @Get()
   getAllOrderItems() {
-    return this.orderItemsService.getAllOrderItems();
+    return this.orderItemsService.getAllOrderItems()
   }
 
   @Get(':id')
   getOrderItemById(@Param('id') id: number) {
-    return this.orderItemsService.getOrderItemById(id);
+    return this.orderItemsService.getOrderItemById(id)
   }
 
   @Patch(':id')
@@ -34,22 +34,22 @@ export class OrderItemsController {
     @Param('id') id: string,
     @Body() orderItem: Partial<OrderItem>,
   ) {
-    return this.orderItemsService.updateOrderItem(id, orderItem);
+    return this.orderItemsService.updateOrderItem(id, orderItem)
   }
 
   @Delete(':id')
   deleteOrderItem(@Param('id') id: string) {
-    return this.orderItemsService.deleteOrderItem(id);
+    return this.orderItemsService.deleteOrderItem(id)
   }
 
   @Get('order/:orderId')
   getOrderItemsByOrderId(@Param('orderId') orderId: string) {
-    return this.orderItemsService.getOrderItemsByOrderId(orderId);
+    return this.orderItemsService.getOrderItemsByOrderId(orderId)
   }
 
   @Get('product/:productId')
   getOrderItemsByProductId(@Param('productId') productId: string) {
-    return this.orderItemsService.getOrderItemsByProductId(productId);
+    return this.orderItemsService.getOrderItemsByProductId(productId)
   }
 
   @Patch(':id/quantity/:quantity')
@@ -57,6 +57,6 @@ export class OrderItemsController {
     @Param('id') id: string,
     @Param('quantity') quantity: number,
   ) {
-    return this.orderItemsService.updateOrderItemQuantity(id, quantity);
+    return this.orderItemsService.updateOrderItemQuantity(id, quantity)
   }
 }
