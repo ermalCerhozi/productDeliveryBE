@@ -61,4 +61,14 @@ export class OrdersController {
   ): Promise<Order[]> {
     return this.ordersService.getFilteredOrders(filters);
   }
+
+  @Get('admin/monthly-sales')
+  getAdminMonthlySales(): Promise<any> {
+    return this.ordersService.getAdminMonthlySales()
+  }
+
+  @Get('client/:clientId/monthly-spending')
+  getClientMonthlySpending(@Param('clientId') clientId: number): Promise<any> {
+    return this.ordersService.getClientMonthlySpending(clientId)
+  }
 }

@@ -5,6 +5,7 @@ import { UpdateResult } from 'typeorm';
 import { Order } from './order.entity';
 import { OrderItem } from '../order-items/orderItem.entity';
 import { Product } from '../products/product.entity';
+import { getRepository } from 'typeorm';
 
 @Injectable()
 export class OrdersService {
@@ -200,5 +201,28 @@ export class OrdersService {
     }
 
     return query.getMany();
+  }
+
+  async getAdminMonthlySales(): Promise<any> {
+    const orderRepository = getRepository(Order);
+
+    return orderRepository
+      .createQueryBuilder('orders')
+      .select('MONTH(orders.created_at)', 'month')
+      .addSelect('SUM(orders.total_price)', 'monthly_sales')
+      .groupBy('MONTH(orders.created_at)')
+      .getRawMany();
+  }
+
+  async getClientMonthlySpending(clientId: number): Promise<any> {
+    const orderRepository = getRepository(Order);
+
+    return orderRepository
+      .createQueryBuilder('orders')
+      .select('MONTH(orders.created_at)', 'month')
+      .addSelect('SUM(orders.total_price)', 'monthly_spending')
+      .where('orders.client_id = :clientId', { clientId })
+      .groupBy('MONTH(orders.created_at)')
+      .getRawMany();
   }
 }
