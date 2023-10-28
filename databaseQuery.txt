@@ -206,6 +206,5 @@ Insert the users using postman, because iserting them using a SQL query will not
 
 
 
-TODO: Ensure that the phone number isn't already in use by another user.
 TODO: Login mechanism to include both phone number and email.
 TODO: Create a separate table for roles and then link the role to the user.

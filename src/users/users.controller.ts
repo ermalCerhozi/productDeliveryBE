@@ -16,6 +16,7 @@ import { UsersService } from './users.service'
 import { User } from './user.entity'
 import { JwtService } from '@nestjs/jwt'
 import * as bcrypt from 'bcrypt'
+import { UserResponseDTO } from './dto/userResponse.dto'
 
 @Controller('users')
 export class UsersController {
@@ -25,21 +26,24 @@ export class UsersController {
   ) {}
 
   @Post()
-  async createUser(@Body() userData: User): Promise<User> {
+  async createUser(@Body() userData: User): Promise<UserResponseDTO> {
     const hashedPassword = await bcrypt.hash(userData.password, 10)
-
     userData.password = hashedPassword
-    return this.usersService.createUser(userData)
+    const createdUser = await this.usersService.createUser(userData)
+
+    return new UserResponseDTO(createdUser)
   }
 
   @Get()
-  async getAllUsers(): Promise<User[]> {
-    return this.usersService.getAllUsers()
+  async getAllUsers(): Promise<UserResponseDTO[]> {
+    const users = await this.usersService.getAllUsers()
+    return users.map((user) => new UserResponseDTO(user))
   }
 
   @Get('getUser:id')
-  async getUserById(@Param('id') id: number): Promise<User> {
-    return this.usersService.getUserById(id)
+  async getUserById(@Param('id') id: number): Promise<UserResponseDTO> {
+    const user = await this.usersService.getUserById(id)
+    return new UserResponseDTO(user)
   }
 
   @Put(':id')
@@ -47,12 +51,12 @@ export class UsersController {
     @Param('id') id: string,
     @Body() userData: Partial<User>,
   ): Promise<void> {
-    return this.usersService.updateUserDetails(id, userData)
+    this.usersService.updateUserDetails(id, userData)
   }
 
   @Delete(':id')
   async deleteUserById(@Param('id') id: string): Promise<void> {
-    return this.usersService.deleteUserById(id)
+    this.usersService.deleteUserById(id)
   }
 
   //Login
@@ -76,7 +80,7 @@ export class UsersController {
 
     response.cookie('jwt', jwt, { httpOnly: true }) // we use httpOnly: true so the frontend cant access the jwt
 
-    return user
+    return new UserResponseDTO(user)
   }
 
   // Get the authenticated user
@@ -94,9 +98,7 @@ export class UsersController {
         throw new UnauthorizedException('User not found')
       }
 
-      const { password, ...result } = user
-
-      return result
+      return new UserResponseDTO(user)
     } catch (e) {
       throw new UnauthorizedException('No JWT token found in cookie')
     }

@@ -24,16 +24,23 @@ export class UsersService {
     })
   }
 
-  async findOne(condition: any): Promise<User> {
-    return this.usersRepository.findOne(condition)
-  }
-
   async deleteUserById(id: string): Promise<void> {
-    await this.usersRepository.delete(parseInt(id, 10))
+    this.usersRepository.delete(parseInt(id, 10))
   }
 
   async updateUserDetails(id: string, user: Partial<User>): Promise<void> {
-    await this.usersRepository.update(parseInt(id, 10), user)
+    this.usersRepository.update(parseInt(id, 10), user)
+  }
+
+  async createUser(user: User): Promise<User> {
+    if (await this.doesEmailExist(user.email)) {
+      throw new Error('Email already exists!')
+    }
+    if (await this.doesNumberExist(user.phone_number)) {
+      throw new Error('Phone number already exists!')
+    }
+
+    return this.usersRepository.save(user)
   }
 
   async doesEmailExist(email: string): Promise<boolean> {
@@ -43,10 +50,14 @@ export class UsersService {
     return !!user
   }
 
-  async createUser(user: User): Promise<User> {
-    if (await this.doesEmailExist(user.email)) {
-      throw new Error('Email already exists!')
-    }
-    return this.usersRepository.save(user)
+  async doesNumberExist(number: string): Promise<boolean> {
+    const user = await this.usersRepository.findOne({
+      where: { phone_number: number },
+    })
+    return !!user
+  }
+
+  async findOne(condition: any): Promise<User> {
+    return this.usersRepository.findOne(condition)
   }
 }
