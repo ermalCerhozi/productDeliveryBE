@@ -43,16 +43,16 @@ export class ProductsController {
     return this.productsService.deleteProductById(id)
   }
 
-  @Get('/search')
+  @Post('/search')
   searchForProducts(
-    @Query('productName') productName: string,
-    @Query('minPrice') minPrice: number,
-    @Query('maxPrice') maxPrice: number,
+    @Body('pagination') pagination: { offset: number, limit: number },
+    @Body('productFilters') productFilters: { minPrice: number, maxPrice: number, search: string},
+    @Body('getCount') getCount: boolean,
   ) {
     return this.productsService.searchForProducts(
-      productName,
-      minPrice,
-      maxPrice,
-    )
+      pagination,
+      productFilters,
+      getCount,
+    );
   }
 }
