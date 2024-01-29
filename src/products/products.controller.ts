@@ -45,14 +45,17 @@ export class ProductsController {
 
   @Post('/search')
   searchForProducts(
-    @Body('pagination') pagination: { offset: number, limit: number },
-    @Body('productFilters') productFilters: { minPrice: number, maxPrice: number, search: string},
+    @Body('pagination') pagination: { offset: number; limit: number },
+    @Body('filters')
+    productFilters: { minPrice: number; maxPrice: number; queryString: string },
+    @Body('searchOptions') searchOptions: { title: boolean; all: boolean },
     @Body('getCount') getCount: boolean,
   ) {
     return this.productsService.searchForProducts(
       pagination,
       productFilters,
+      searchOptions,
       getCount,
-    );
+    )
   }
 }

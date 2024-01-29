@@ -33,36 +33,55 @@ export class ProductsService {
     return this.productsRepository.save(product)
   }
 
-  async searchForProducts(pagination: { offset: number, limit: number }, productFilters: { minPrice?: number, maxPrice?: number, search?: string }, getCount: boolean) {
+  async searchForProducts(
+    pagination: { offset: number; limit: number },
+    productFilters: {
+      minPrice?: number
+      maxPrice?: number
+      queryString?: string
+    },
+    searchOptions: { title: boolean; all: boolean },
+    getCount: boolean,
+  ) {
     // Start building the query
-    let query = this.productsRepository.createQueryBuilder('product');
-  
-    // Apply price filters if they are provided
+    let query = this.productsRepository.createQueryBuilder('product')
+
     if (productFilters.minPrice !== undefined) {
-      query = query.andWhere('product.price >= :minPrice', { minPrice: productFilters.minPrice });
+      query = query.andWhere('product.price >= :minPrice', {
+        minPrice: productFilters.minPrice,
+      })
     }
     if (productFilters.maxPrice !== undefined) {
-      query = query.andWhere('product.price <= :maxPrice', { maxPrice: productFilters.maxPrice });
+      query = query.andWhere('product.price <= :maxPrice', {
+        maxPrice: productFilters.maxPrice,
+      })
     }
-  
-    // Apply search filter if it is provided
-    if (productFilters.search !== undefined) {
-      query = query.andWhere('product.product_name LIKE :search', { search: `%${productFilters.search}%` });
+
+    if (productFilters.queryString !== undefined) {
+      const searchQuery = `%${productFilters.queryString}%`.toLowerCase()
+      if (searchOptions.all) {
+        query = query.andWhere(
+          '(LOWER(product.product_name) LIKE :search OR LOWER(product.ingredients) LIKE :search OR LOWER(product.description) LIKE :search)',
+          { search: searchQuery },
+        )
+      } else {
+        query = query.andWhere('LOWER(product.product_name) LIKE :search', {
+          search: searchQuery,
+        })
+      }
     }
-  
-    // Get the count of records that match the query only if getCount is true
-    let resultCount;
+
+    let count
     if (getCount) {
-      resultCount = await query.clone().getCount();
+      count = await query.clone().getCount()
     }
-  
-    // Apply pagination
-    query = query.skip(pagination.offset).take(pagination.limit);
-  
-    // Execute the query and return the results
-    const products = await query.getMany();
-  
-    // Return both the products and the count if count is true, else return only products
-    return getCount ? { products, count: resultCount } : { products };
+
+    query = query.skip(pagination.offset).take(pagination.limit)
+
+    // TODO: Order by latest
+    query = query.orderBy('product.id', 'DESC')
+
+    const products = await query.getMany()
+    return getCount ? { products, count } : { products }
   }
 }

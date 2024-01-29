@@ -49,17 +49,19 @@ export class OrdersController {
     return this.ordersService.getOrdersBySellerId(sellerId)
   }
 
-  @Get('filter')
+  @Post('/search')
   getFilteredOrders(
-    @Query()
+    @Body('pagination') pagination: { offset: number; limit: number },
+    @Body('filters')
     filters: {
       startDate?: Date
       endDate?: Date
       clientId?: number
       sellerId?: number
     },
-  ): Promise<Order[]> {
-    return this.ordersService.getFilteredOrders(filters)
+    @Body('getCount') getCount: boolean,
+  ) {
+    return this.ordersService.getFilteredOrders(pagination, filters, getCount)
   }
 
   @Get('admin/monthly-sales')

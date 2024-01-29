@@ -167,7 +167,11 @@ export class OrdersService {
       .getMany()
   }
 
-  async getFilteredOrders(filters: any): Promise<Order[]> {
+  async getFilteredOrders(
+    pagination: any,
+    filters: any,
+    getCount: boolean,
+  ): Promise<{ orders: Order[]; count?: number }> {
     const query = this.ordersRepository.createQueryBuilder('order')
 
     // Join the related entities
@@ -200,7 +204,18 @@ export class OrdersService {
       })
     }
 
-    return query.getMany()
+    let count
+    if (getCount) {
+      count = await query.clone().getCount()
+    }
+
+    query.skip(pagination.offset).take(pagination.limit)
+
+    // TODO: Order by latest
+    query.orderBy('product.id', 'DESC')
+
+    const orders = await query.getMany()
+    return getCount ? { orders, count } : { orders }
   }
 
   async getAdminMonthlySales(): Promise<any> {
