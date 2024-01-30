@@ -18,7 +18,7 @@ import { OrderItemsModule } from './order-items/order-items.module'
       host: 'localhost',
       port: 3306,
       username: 'root',
-      password: '',
+      password: 'Fjalkalimi.123',
       database: 'bakerydb',
       entities: [User, Product, Order, OrderItem],
       synchronize: true,

@@ -25,10 +25,10 @@ export class ProductsService {
   async updateProductDetails(
     id: number,
     product: Partial<Product>,
-  ): Promise<void> {
+  ): Promise<Product> {
     await this.productsRepository.update(id, product)
+    return this.productsRepository.findOne({ where: { id: id } })
   }
-
   async createProduct(product: Product): Promise<Product> {
     return this.productsRepository.save(product)
   }

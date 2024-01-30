@@ -59,6 +59,23 @@ export class UsersController {
     this.usersService.deleteUserById(id)
   }
 
+  @Post('/search')
+  searchForUsers(
+    @Body('pagination') pagination: { offset: number; limit: number },
+    @Body('filters')
+    userFilters: { queryString: string },
+    @Body('searchOptions') searchOptions: { title: boolean; all: boolean },
+    @Body('getCount') getCount: boolean,
+  ) {
+    console.log('searchForUsers')
+    return this.usersService.searchForUsers(
+      pagination,
+      userFilters,
+      searchOptions,
+      getCount,
+    )
+  }
+
   //Login
   @Post('login')
   async login(

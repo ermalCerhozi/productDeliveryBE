@@ -31,11 +31,11 @@ export class ProductsController {
   }
 
   @Put('/:id')
-  updateProductDetails(
+  async updateProductDetails(
     @Param('id') id: number,
     @Body() product: Partial<Product>,
   ) {
-    return this.productsService.updateProductDetails(id, product)
+    return await this.productsService.updateProductDetails(id, product)
   }
 
   @Delete('/:id')

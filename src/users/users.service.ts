@@ -60,4 +60,43 @@ export class UsersService {
   async findOne(condition: any): Promise<User> {
     return this.usersRepository.findOne(condition)
   }
+
+  async searchForUsers(
+    pagination: { offset: number; limit: number },
+    userFilters: {
+      queryString?: string
+    },
+    searchOptions: { title: boolean; all: boolean },
+    getCount: boolean,
+  ) {
+    // Start building the query
+    let query = this.usersRepository.createQueryBuilder('user')
+
+    if (userFilters.queryString !== undefined) {
+      const searchQuery = `%${userFilters.queryString}%`.toLowerCase()
+      if (searchOptions.all) {
+        query = query.andWhere(
+          'LOWER(user.first_name) LIKE :searchQuery OR LOWER(user.last_name) LIKE :searchQuery OR LOWER(user.email) LIKE :searchQuery OR LOWER(user.phone_number) LIKE :searchQuery',
+          { searchQuery },
+        )
+      } else if (searchOptions.title) {
+        query = query.andWhere('LOWER(user.first_name) LIKE :searchQuery', {
+          searchQuery,
+        })
+      }
+    }
+
+    let count
+    if (getCount) {
+      count = await query.clone().getCount()
+    }
+
+    query = query.skip(pagination.offset).take(pagination.limit)
+
+    // TODO: Order by latest
+    query = query.orderBy('user.id', 'DESC')
+
+    const users = await query.getMany()
+    return getCount ? { users, count } : { users }
+  }
 }
