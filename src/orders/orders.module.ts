@@ -7,8 +7,8 @@ import { OrderItem } from 'src/order-items/orderItem.entity'
 import { Product } from 'src/products/product.entity'
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Order, OrderItem, Product])],
-  providers: [OrdersService],
-  controllers: [OrdersController],
+    imports: [TypeOrmModule.forFeature([Order, OrderItem, Product])],
+    providers: [OrdersService],
+    controllers: [OrdersController],
 })
 export class OrdersModule {}

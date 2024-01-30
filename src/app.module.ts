@@ -12,23 +12,23 @@ import { OrdersModule } from './orders/orders.module'
 import { OrderItemsModule } from './order-items/order-items.module'
 
 @Module({
-  imports: [
-    TypeOrmModule.forRoot({
-      type: 'mysql',
-      host: 'localhost',
-      port: 3306,
-      username: 'root',
-      password: 'Fjalkalimi.123',
-      database: 'bakerydb',
-      entities: [User, Product, Order, OrderItem],
-      synchronize: true,
-    }),
-    UsersModule,
-    ProductsModule,
-    OrdersModule,
-    OrderItemsModule,
-  ],
-  controllers: [AppController],
-  providers: [AppService],
+    imports: [
+        TypeOrmModule.forRoot({
+            type: 'mysql',
+            host: 'localhost',
+            port: 3306,
+            username: 'root',
+            password: 'Fjalkalimi.123',
+            database: 'bakerydb',
+            entities: [User, Product, Order, OrderItem],
+            synchronize: true,
+        }),
+        UsersModule,
+        ProductsModule,
+        OrdersModule,
+        OrderItemsModule,
+    ],
+    controllers: [AppController],
+    providers: [AppService],
 })
 export class AppModule {}
