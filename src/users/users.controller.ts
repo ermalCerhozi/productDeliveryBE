@@ -40,6 +40,12 @@ export class UsersController {
         return users.map((user) => new UserResponseDTO(user))
     }
 
+    @Get('/seller')
+    async getAllSellerUsers(): Promise<UserResponseDTO[]> {
+        const users = await this.usersService.getAllSellerUsers()
+        return users.map((user) => new UserResponseDTO(user))
+    }
+
     @Get('/client')
     async getAllClientUsers(): Promise<UserResponseDTO[]> {
         const users = await this.usersService.getAllClientUsers()

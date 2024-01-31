@@ -43,6 +43,9 @@ export class ProductsService {
         searchOptions: { title: boolean; all: boolean },
         getCount: boolean,
     ) {
+        console.log('pagination', pagination)
+        console.log('productFilters', productFilters)
+
         // Start building the query
         let query = this.productsRepository.createQueryBuilder('product')
 
@@ -82,7 +85,7 @@ export class ProductsService {
         query = query.skip(pagination.offset).take(pagination.limit)
 
         // TODO: Order by latest
-        query = query.orderBy('product.id', 'DESC')
+        // query = query.orderBy('product.id', 'DESC')
 
         const products = await query.getMany()
         return getCount ? { products, count } : { products }

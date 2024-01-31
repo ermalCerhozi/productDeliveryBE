@@ -14,6 +14,12 @@ export class UsersService {
         return this.usersRepository.find()
     }
 
+    async getAllSellerUsers(): Promise<User[]> {
+        return this.usersRepository.find({
+            where: { role: 'seller' },
+        })
+    }
+
     async getAllClientUsers(): Promise<User[]> {
         return this.usersRepository.find({
             where: { role: 'client' },

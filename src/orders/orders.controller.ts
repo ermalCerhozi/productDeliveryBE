@@ -52,6 +52,7 @@ export class OrdersController {
         },
         @Body('getCount') getCount: boolean,
     ) {
+        console.log('filters', filters)
         return this.ordersService.getFilteredOrders(
             pagination,
             filters,

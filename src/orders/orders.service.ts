@@ -190,6 +190,8 @@ export class OrdersService {
         filters: any,
         getCount: boolean,
     ): Promise<{ orders: Order[]; count?: number }> {
+        console.log('filters', filters)
+
         const query = this.ordersRepository.createQueryBuilder('order')
 
         // Join the related entities
@@ -227,8 +229,7 @@ export class OrdersService {
 
         query.skip(pagination.offset).take(pagination.limit)
 
-        // TODO: Order by latest
-        query.orderBy('product.id', 'DESC')
+        query.orderBy('order.created_at', 'DESC')
 
         const orders = await query.getMany()
         return getCount ? { orders, count } : { orders }
