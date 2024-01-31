@@ -188,9 +188,9 @@ export class OrdersService {
     }
 
     async getFilteredOrders(
-        pagination: any,
         filters: any,
         getCount: boolean,
+        pagination?: any,
     ): Promise<{ orders: Order[]; count?: number }> {
         console.log('filters', filters)
 
@@ -229,7 +229,9 @@ export class OrdersService {
             count = await query.clone().getCount()
         }
 
-        query.skip(pagination.offset).take(pagination.limit)
+        if (pagination) {
+            query.skip(pagination.offset).take(pagination.limit)
+        }
 
         query.orderBy('order.created_at', 'DESC')
 
@@ -260,16 +262,99 @@ export class OrdersService {
             .getRawMany()
     }
 
-    async generatePdf(orders: Order[]): Promise<Buffer> {
+    async generatePdf(orders: Order[], endDate: Date, startDate: Date) {
         pdfMake.vfs = pdfFonts.pdfMake.vfs
+
+        let total_price = 0
+
+        const data = orders.map((order, index) => {
+            const itemDetails = order.order_items.map((item) => ({
+                order_item: `${item.quantity} ${item.product?.product_name}`,
+                order_return: `${item.returned_quantity}`,
+            }))
+
+            const order_items = itemDetails
+                .map((item) => item.order_item)
+                .join('\n')
+            const order_returns = itemDetails
+                .map((item) => item.order_return)
+                .join('\n')
+
+            total_price += Number(order.total_price) // Calculate the total_price
+
+            const date = new Date(order.created_at)
+            const order_date = date.toLocaleDateString('en-GB')
+            const order_time = `${date.getHours()}:${date.getMinutes()}`
+
+            return [
+                index + 1 || '',
+                order.seller.first_name + ' ' + order.seller.last_name || '',
+                order.client.first_name + ' ' + order.client.last_name || '',
+                order_items || '',
+                order_returns || '',
+                order_date || '',
+                order_time || '',
+                Math.round(order.total_price).toLocaleString() + ' ' + 'Lekë' ||
+                    '',
+            ]
+        })
+
+        // Insert column titles
+        data.unshift([
+            '#',
+            'Seller',
+            'Client',
+            'Order',
+            'Re.',
+            'Date',
+            'Time',
+            'Price',
+        ])
+
+        // Insert a row with the total price
+        data.push([
+            '',
+            '',
+            '',
+            '',
+            '',
+            '',
+            'Total',
+            Math.round(total_price).toLocaleString() + ' ' + 'Lekë' || '',
+        ])
+
+        const startDateObj = new Date(startDate)
+        const endDateObj = new Date(endDate)
+        const dateRange =
+            startDate && endDate
+                ? `${startDateObj.toLocaleDateString('en-GB')} to ${endDateObj.toLocaleDateString('en-GB')}`
+                : 'No date range provided'
 
         const documentDefinition = {
             content: [
-                { text: 'Filtered Orders', style: 'header' },
-                ...orders.map((order) => ({
-                    text: `Order ID: ${order.id}`,
+                {
+                    text: `Orders from: ${dateRange}`,
+                    style: 'header',
+                },
+                {
+                    layout: 'lightHorizontalLines',
+                    table: {
+                        headerRows: 1,
+                        widths: [15, 45, '*', 100, 25, 65, 35, '*'],
+                        body: data,
+                    },
+                },
+                {
+                    text: 'If you want to see your orders in real time or you want to view product pricing you can visit:',
                     style: 'body',
-                })),
+                    absolutePosition: { x: 40, y: 750 }, // Adjust y value according to your page size
+                },
+                {
+                    text: 'https://asdfasdf',
+                    style: 'link',
+                    link: 'https://asdfasdf',
+                    absolutePosition: { x: 40, y: 770 }, // Adjust y value according to your page size
+                },
             ],
             styles: {
                 header: {
@@ -278,8 +363,14 @@ export class OrdersService {
                     margin: [0, 0, 0, 10],
                 },
                 body: {
-                    fontSize: 14,
+                    fontSize: 12,
                     bold: false,
+                    margin: [0, 0, 0, 5],
+                },
+                link: {
+                    fontSize: 12,
+                    color: 'blue',
+                    decoration: 'underline',
                     margin: [0, 0, 0, 5],
                 },
             },

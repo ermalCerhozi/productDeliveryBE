@@ -50,9 +50,8 @@ export class OrdersController {
         return this.ordersService.getOrdersBySellerId(sellerId)
     }
 
-    @Post('/download')
-    async getFilteredOrdersToDownload(
-        @Body('pagination') pagination: { offset: number; limit: number },
+    @Post('/search')
+    getFilteredOrders(
         @Body('filters')
             filters: {
             startDate?: Date
@@ -60,42 +59,14 @@ export class OrdersController {
             clientId?: number
             sellerId?: number
         },
-        @Body('getCount') getCount = false,
-        @Res() response: Response,
-    ) {
-        const orders = await this.ordersService.getFilteredOrders(
-            pagination,
-            filters,
-            getCount,
-        )
-
-        const pdfBuffer = await this.ordersService.generatePdf(orders.orders)
-
-        response.setHeader('Content-Type', 'application/pdf')
-        response.setHeader(
-            'Content-Disposition',
-            'attachment; filename=filtered_orders.pdf',
-        )
-        response.end(pdfBuffer, 'binary') // Send the response as binary data
-    }
-
-    @Post('/search')
-    getFilteredOrders(
-        @Body('pagination') pagination: { offset: number; limit: number },
-        @Body('filters')
-        filters: {
-            startDate?: Date
-            endDate?: Date
-            clientId?: number
-            sellerId?: number
-        },
         @Body('getCount') getCount: boolean,
+        @Body('pagination') pagination: { offset: number; limit: number },
     ) {
         console.log('filters', filters)
         return this.ordersService.getFilteredOrders(
-            pagination,
             filters,
             getCount,
+            pagination,
         )
     }
 
@@ -109,5 +80,37 @@ export class OrdersController {
         @Param('clientId') clientId: number,
     ): Promise<any> {
         return this.ordersService.getClientMonthlySpending(clientId)
+    }
+
+    @Post('/download')
+    async getFilteredOrdersToDownload(
+        @Body('filters')
+            filters: {
+            startDate?: Date
+            endDate?: Date
+            clientId?: number
+            sellerId?: number
+        },
+        @Body('getCount') getCount = false,
+        @Res() response: Response,
+    ) {
+        const orders = await this.ordersService.getFilteredOrders(
+            filters,
+            getCount,
+        )
+
+        const { startDate, endDate } = filters
+        const pdfBuffer = await this.ordersService.generatePdf(
+            orders.orders,
+            endDate,
+            startDate,
+        )
+
+        response.setHeader('Content-Type', 'application/pdf')
+        response.setHeader(
+            'Content-Disposition',
+            'attachment; filename=filtered_orders.pdf',
+        )
+        response.end(pdfBuffer, 'binary')
     }
 }
