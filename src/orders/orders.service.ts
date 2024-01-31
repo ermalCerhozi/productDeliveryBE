@@ -6,6 +6,8 @@ import { Order } from './order.entity'
 import { OrderItem } from '../order-items/orderItem.entity'
 import { Product } from '../products/product.entity'
 import { getRepository } from 'typeorm'
+import * as pdfMake from 'pdfmake/build/pdfmake'
+import * as pdfFonts from 'pdfmake/build/vfs_fonts'
 
 @Injectable()
 export class OrdersService {
@@ -256,5 +258,38 @@ export class OrdersService {
             .where('orders.client_id = :clientId', { clientId })
             .groupBy('MONTH(orders.created_at)')
             .getRawMany()
+    }
+
+    async generatePdf(orders: Order[]): Promise<Buffer> {
+        pdfMake.vfs = pdfFonts.pdfMake.vfs
+
+        const documentDefinition = {
+            content: [
+                { text: 'Filtered Orders', style: 'header' },
+                ...orders.map((order) => ({
+                    text: `Order ID: ${order.id}`,
+                    style: 'body',
+                })),
+            ],
+            styles: {
+                header: {
+                    fontSize: 18,
+                    bold: true,
+                    margin: [0, 0, 0, 10],
+                },
+                body: {
+                    fontSize: 14,
+                    bold: false,
+                    margin: [0, 0, 0, 5],
+                },
+            },
+        }
+
+        const pdfDoc = pdfMake.createPdf(documentDefinition)
+        return new Promise((resolve, reject) => {
+            pdfDoc.getBuffer((buffer) => {
+                resolve(buffer)
+            })
+        })
     }
 }
