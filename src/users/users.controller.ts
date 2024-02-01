@@ -88,7 +88,7 @@ export class UsersController {
     }
 
     //Login
-    @Post('login')
+    @Post('/login')
     async login(
         @Body('phone_number') phone_number: string,
         @Body('password') password: string,
