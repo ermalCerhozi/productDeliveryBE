@@ -10,6 +10,8 @@ export class UserResponseDTO {
     email: string
     phone_number: string
     role: string
+    profile_picture: string
+    location: string
     client_orders: any[]
     seller_orders: any[]
 
@@ -23,6 +25,8 @@ export class UserResponseDTO {
         this.email = user.email
         this.phone_number = user.phone_number
         this.role = user.role
+        this.profile_picture = user.profile_picture
+        this.location = user.location
         this.client_orders = user.client_orders
         this.seller_orders = user.seller_orders
     }

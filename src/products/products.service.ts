@@ -43,9 +43,6 @@ export class ProductsService {
         searchOptions: { title: boolean; all: boolean },
         getCount: boolean,
     ) {
-        console.log('pagination', pagination)
-        console.log('productFilters', productFilters)
-
         // Start building the query
         let query = this.productsRepository.createQueryBuilder('product')
 

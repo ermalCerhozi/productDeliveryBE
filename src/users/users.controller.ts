@@ -10,6 +10,7 @@ import {
     Res,
     Req,
     UnauthorizedException,
+    Patch,
 } from '@nestjs/common'
 import { Response, Request } from 'express'
 import { UsersService } from './users.service'
@@ -58,12 +59,29 @@ export class UsersController {
         return new UserResponseDTO(user)
     }
 
-    @Put(':id')
+    @Patch(':id')
     async updateUserDetails(
-        @Param('id') id: string,
+        @Param('id') id: number,
         @Body() userData: Partial<User>,
-    ): Promise<void> {
-        this.usersService.updateUserDetails(id, userData)
+    ): Promise<User> {
+        const updatedUser: User = await this.usersService.updateUserDetails(
+            id,
+            userData,
+        )
+        return updatedUser
+    }
+
+    @Patch(':id/password')
+    changeUserPassword(
+        @Param('id') id: number,
+        @Body()
+        newPass: {
+            actualPassword: string
+            newPassword: string
+            confirmPassword: string
+        },
+    ): Promise<any> {
+        return this.usersService.changeUserPassword(id, newPass)
     }
 
     @Delete(':id')
@@ -78,7 +96,6 @@ export class UsersController {
         @Body('searchOptions') searchOptions: { title: boolean; all: boolean },
         @Body('getCount') getCount: boolean,
     ) {
-        console.log('searchForUsers')
         return this.usersService.searchForUsers(
             pagination,
             userFilters,

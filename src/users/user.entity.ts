@@ -40,6 +40,12 @@ export class User {
     @Column({ length: 64 })
         password: string
 
+    @Column({ length: 500 })
+        location: string
+
+    @Column({ length: 500 })
+        profile_picture: string
+
     @OneToMany(() => Order, (order) => order.client)
         client_orders: Order[]
 

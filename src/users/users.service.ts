@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { User } from './user.entity'
+import * as bcrypt from 'bcrypt'
 
 @Injectable()
 export class UsersService {
@@ -40,8 +41,39 @@ export class UsersService {
         this.usersRepository.delete(parseInt(id, 10))
     }
 
-    async updateUserDetails(id: string, user: Partial<User>): Promise<void> {
-        this.usersRepository.update(parseInt(id, 10), user)
+    async updateUserDetails(id: number, user: Partial<User>): Promise<User> {
+        await this.usersRepository.update(id, user)
+        return await this.getUserById(id)
+    }
+
+    async changeUserPassword(
+        id: number,
+        newPass: {
+            actualPassword: string
+            newPassword: string
+            confirmPassword: string
+        },
+    ): Promise<any> {
+        const user = await this.getUserById(id)
+        if (!user) {
+            throw new Error('User not found')
+        }
+        if (!newPass.actualPassword || !user.password) {
+            throw new Error('Password data is missing')
+        }
+        const isMatch = await bcrypt.compare(
+            newPass.actualPassword,
+            user.password,
+        )
+        if (!isMatch) {
+            throw new Error('Current password does not match')
+        }
+        if (newPass.newPassword !== newPass.confirmPassword) {
+            throw new Error('New password and confirm password do not match')
+        }
+        const hashedPassword = await bcrypt.hash(newPass.newPassword, 10)
+        user.password = hashedPassword
+        return this.usersRepository.save(user)
     }
 
     async createUser(user: User): Promise<User> {
