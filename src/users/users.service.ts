@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { User } from './user.entity'
 import * as bcrypt from 'bcrypt'
+import * as nodemailer from 'nodemailer'
 
 @Injectable()
 export class UsersService {
@@ -34,6 +35,12 @@ export class UsersService {
     async getUserByPhoneNumber(phone_number: string): Promise<User> {
         return this.usersRepository.findOne({
             where: { phone_number: phone_number },
+        })
+    }
+
+    async getUserByEmail(email: string): Promise<User> {
+        return this.usersRepository.findOne({
+            where: { email: email },
         })
     }
 
@@ -144,5 +151,43 @@ export class UsersService {
 
         const users = await query.getMany()
         return getCount ? { users, count } : { users }
+    }
+
+
+    // TODO: move sensitive information to .env folder and add to git ignore
+    async resetPassword(email: string): Promise<string> {
+        let newPassword = ''
+        const characters =
+            'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+        for (let i = 0; i < 5; i++) {
+            newPassword += characters.charAt(
+                Math.floor(Math.random() * characters.length),
+            )
+        }
+
+        const user = await this.getUserByEmail(email)
+        if (!user) {
+            throw new Error('User not found')
+        }
+        user.password = await bcrypt.hash(newPassword, 10)
+        await this.usersRepository.save(user)
+
+        const transporter = nodemailer.createTransport({
+            service: 'gmail',
+            auth: {
+                user: 'trackease3@gmail.com',
+                pass: 'wpbc hnqw hidx yybq',
+            },
+        })
+
+        const mailOptions = {
+            from: 'trackease3@gmail.com',
+            to: email,
+            subject: 'Password Reset',
+            html: `<h1>Password Reset</h1><p>Your new password is: ${newPassword}</p></br><p>Use this password to login and change your password.</p>`,
+        }
+        await transporter.sendMail(mailOptions)
+
+        return 'Password reset email sent'
     }
 }

@@ -26,6 +26,11 @@ export class UsersController {
         private jwtService: JwtService,
     ) {}
 
+    @Post('resetPassword')
+    async resetPassword(@Body('email') email: string) {
+        return this.usersService.resetPassword(email)
+    }
+
     @Post()
     async createUser(@Body() userData: User): Promise<UserResponseDTO> {
         const hashedPassword = await bcrypt.hash(userData.password, 10)
@@ -159,4 +164,5 @@ export class UsersController {
             message: 'SUCCESS: Logged out',
         }
     }
+
 }
