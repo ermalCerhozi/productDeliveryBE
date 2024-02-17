@@ -2,17 +2,14 @@ import {
     Controller,
     Get,
     Post,
-    Put,
     Delete,
     Body,
     Param,
     BadRequestException,
     Res,
-    Req,
-    UnauthorizedException,
     Patch,
 } from '@nestjs/common'
-import { Response, Request } from 'express'
+import { Response } from 'express'
 import { UsersService } from './users.service'
 import { User } from './user.entity'
 import { JwtService } from '@nestjs/jwt'
@@ -25,11 +22,6 @@ export class UsersController {
         private usersService: UsersService,
         private jwtService: JwtService,
     ) {}
-
-    @Post('resetPassword')
-    async resetPassword(@Body('email') email: string) {
-        return this.usersService.resetPassword(email)
-    }
 
     @Post()
     async createUser(@Body() userData: User): Promise<UserResponseDTO> {
@@ -76,6 +68,11 @@ export class UsersController {
         return updatedUser
     }
 
+    /**
+     * @description Changes users password
+     * @param id
+     * @param newPass
+     */
     @Patch(':id/password')
     changeUserPassword(
         @Param('id') id: number,
@@ -109,7 +106,7 @@ export class UsersController {
         )
     }
 
-    //Login
+    //TOD0: JWT and Cookie expiration usage of refresh token
     @Post('/login')
     async login(
         @Body('phone_number') phone_number: string,
@@ -128,32 +125,14 @@ export class UsersController {
             throw new BadRequestException('Invalid credentials')
         }
 
-        const jwt = await this.jwtService.signAsync({ id: user.id })
+        const jwt = await this.jwtService.signAsync(
+            { id: user.id },
+            { expiresIn: '1h' },
+        ) // JWT expires in 1 hour
 
-        response.cookie('jwt', jwt, { httpOnly: true }) // we use httpOnly: true so the frontend cant access the jwt
+        response.cookie('jwt', jwt, { httpOnly: true, maxAge: 3600000 }) // Cookie expires in 1 hour (3600000 milliseconds)
 
         return new UserResponseDTO(user)
-    }
-
-    // Get the authenticated user
-    @Get('loggedInUser')
-    async user(@Req() request: Request) {
-        try {
-            const cookie = request.cookies['jwt']
-            const data = await this.jwtService.verifyAsync(cookie)
-
-            const user = await this.usersService.findOne({
-                where: { id: data['id'] },
-            })
-
-            if (!user) {
-                throw new UnauthorizedException('User not found')
-            }
-
-            return new UserResponseDTO(user)
-        } catch (e) {
-            throw new UnauthorizedException('No JWT token found in cookie')
-        }
     }
 
     @Post('logout')
@@ -165,4 +144,13 @@ export class UsersController {
         }
     }
 
+    /**
+     * @description Generates a new random password for a user who has forgotten their password,
+     * and then sends this new password to the user's email address.
+     * @param email
+     */
+    @Post('resetPassword')
+    async resetPassword(@Body('email') email: string) {
+        return this.usersService.resetPassword(email)
+    }
 }

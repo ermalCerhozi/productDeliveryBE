@@ -1,8 +1,9 @@
 module.exports = {
-    parser: '@typescript-eslint/parser',
+    plugins: ['@typescript-eslint', 'prettier', 'import'],
     extends: [
         'plugin:@typescript-eslint/recommended',
         'plugin:prettier/recommended',
+        'prettier',
     ],
     plugins: ['@typescript-eslint', 'prettier'],
     rules: {
@@ -10,17 +11,35 @@ module.exports = {
         '@typescript-eslint/explicit-function-return-type': 'off',
         '@typescript-eslint/explicit-module-boundary-types': 'off',
         '@typescript-eslint/no-explicit-any': 'off',
-        semi: ['error', 'never'],
+        '@typescript-eslint/no-unused-vars': [
+            'error',
+            { argsIgnorePattern: '^_' },
+        ],
+        '@typescript-eslint/no-empty-function': 'off',
         'prettier/prettier': [
             'error',
             {
-                semi: false, // Disable semicolons
-                singleQuote: true, // Use single quotes (based on your provided code style)
-                trailingComma: 'all', // Add trailing commas where possible
-                endOfLine: 'auto', // Add this line
-                tabWidth: 4, // Add this line
+                semi: false,
+                singleQuote: true,
+                trailingComma: 'all',
+                endOfLine: 'auto',
+                tabWidth: 4,
             },
         ],
-        indent: ['error', 4],
+        'no-console': 'warn',
+        'no-eval': 'error',
+        'import/first': 'error',
+        'import/no-duplicates': 'error',
+        'import/no-named-as-default': 'error',
+        'import/no-named-as-default-member': 'error',
+    },
+    env: {
+        jest: true,
+        node: true,
+        es6: true,
+    },
+    parserOptions: {
+        ecmaVersion: 2020,
+        sourceType: 'module',
     },
 }

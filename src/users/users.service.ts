@@ -3,13 +3,14 @@ import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { User } from './user.entity'
 import * as bcrypt from 'bcrypt'
-import * as nodemailer from 'nodemailer'
+import { EmailService } from 'src/email.service'
 
 @Injectable()
 export class UsersService {
     constructor(
         @InjectRepository(User)
         private usersRepository: Repository<User>,
+        private emailService: EmailService,
     ) {}
 
     async getAllUsers(): Promise<User[]> {
@@ -25,6 +26,12 @@ export class UsersService {
     async getAllClientUsers(): Promise<User[]> {
         return this.usersRepository.find({
             where: { role: 'client' },
+        })
+    }
+
+    async getAllAdminUsers(): Promise<User[]> {
+        return this.usersRepository.find({
+            where: { role: 'admin' },
         })
     }
 
@@ -153,9 +160,8 @@ export class UsersService {
         return getCount ? { users, count } : { users }
     }
 
-
     // TODO: move sensitive information to .env folder and add to git ignore
-    async resetPassword(email: string): Promise<string> {
+    async resetPassword(email: string) {
         let newPassword = ''
         const characters =
             'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
@@ -172,22 +178,7 @@ export class UsersService {
         user.password = await bcrypt.hash(newPassword, 10)
         await this.usersRepository.save(user)
 
-        const transporter = nodemailer.createTransport({
-            service: 'gmail',
-            auth: {
-                user: 'trackease3@gmail.com',
-                pass: 'wpbc hnqw hidx yybq',
-            },
-        })
-
-        const mailOptions = {
-            from: 'trackease3@gmail.com',
-            to: email,
-            subject: 'Password Reset',
-            html: `<h1>Password Reset</h1><p>Your new password is: ${newPassword}</p></br><p>Use this password to login and change your password.</p>`,
-        }
-        await transporter.sendMail(mailOptions)
-
-        return 'Password reset email sent'
+        // Send email
+        return this.emailService.sendResetPasswordEmail(email, newPassword)
     }
 }
