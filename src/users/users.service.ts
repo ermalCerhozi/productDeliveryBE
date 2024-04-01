@@ -152,15 +152,58 @@ export class UsersService {
         }
 
         query = query.skip(pagination.offset).take(pagination.limit)
-
-        // TODO: Order by latest
-        query = query.orderBy('user.id', 'DESC')
+        query = query.orderBy('user.created_at', 'DESC')
 
         const users = await query.getMany()
         return getCount ? { users, count } : { users }
     }
 
-    // TODO: move sensitive information to .env folder and add to git ignore
+    async searchForClients(
+        pagination: { offset: number; limit: number },
+        clientName: string,
+    ) {
+        let query = this.usersRepository.createQueryBuilder('user')
+
+        if (clientName !== undefined) {
+            const searchQuery = `%${clientName}%`.toLowerCase()
+            query = query.andWhere(
+                'LOWER(user.first_name) LIKE :searchQuery OR LOWER(user.last_name) LIKE :searchQuery OR LOWER(user.email) LIKE :searchQuery OR LOWER(user.phone_number) LIKE :searchQuery',
+                { searchQuery },
+            )
+        }
+
+        query = query.andWhere('user.role = :role', { role: 'client' })
+
+        query = query.skip(pagination.offset).take(pagination.limit)
+        query = query.orderBy('user.created_at', 'DESC')
+
+        const clients = await query.getMany()
+        return clients
+    }
+
+    async searchForSellers(
+        pagination: { offset: number; limit: number },
+        sellerName: string,
+    ) {
+        let query = this.usersRepository.createQueryBuilder('user')
+
+        if (sellerName !== undefined) {
+            const searchQuery = `%${sellerName}%`.toLowerCase()
+            query = query.andWhere(
+                'LOWER(user.first_name) LIKE :searchQuery OR LOWER(user.last_name) LIKE :searchQuery OR LOWER(user.email) LIKE :searchQuery OR LOWER(user.phone_number) LIKE :searchQuery',
+                { searchQuery },
+            )
+        }
+
+        query = query.andWhere('user.role = :role', { role: 'seller' })
+
+        query = query.skip(pagination.offset).take(pagination.limit)
+        query = query.orderBy('user.created_at', 'DESC')
+
+        const sellers = await query.getMany()
+        return sellers
+    }
+
     async resetPassword(email: string) {
         let newPassword = ''
         const characters =

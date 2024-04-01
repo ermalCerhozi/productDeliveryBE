@@ -3,6 +3,9 @@ import * as nodemailer from 'nodemailer'
 import * as fs from 'fs'
 import * as path from 'path'
 import { Order } from './orders/order.entity'
+import * as dotenv from 'dotenv'
+
+dotenv.config()
 
 @Injectable()
 export class EmailService {
@@ -12,18 +15,18 @@ export class EmailService {
         this.transporter = nodemailer.createTransport({
             service: 'gmail',
             auth: {
-                user: 'trackease3@gmail.com',
-                pass: 'wpbc hnqw hidx yybq',
+                user: process.env.EMAIL,
+                pass: process.env.PASSWORD,
             },
         })
     }
 
-    async sendOrderCreatedEmail(to: string, order: Order): Promise<void> {
+    async sendOrderCreatedEmail(order: Order): Promise<void> {
         const mailOptions = {
-            from: 'trackease3@gmail.com',
-            to: to,
+            from: process.env.EMAIL,
+            to: order.client?.email,
             subject: 'Order Created',
-            html: this.convertOrderToHtml(order),
+            html: this.getCreateOrderEmailTemplate(order),
         }
 
         this.transporter.sendMail(mailOptions, (error, info) => {
@@ -35,20 +38,17 @@ export class EmailService {
         })
     }
 
+    // TODO: Add a features that emphasizes the details that have been updated...
     async sendOrderUpdatedEmail(
         to: string,
         updatedBy: string,
         order: Order,
     ): Promise<void> {
         const mailOptions = {
-            from: 'trackease3@gmail.com',
+            from: process.env.EMAIL,
             to: to,
             subject: 'Order Updated',
-            text: `An order has been updated by ${updatedBy}.\n\n Order details: ${JSON.stringify(
-                order,
-                null,
-                4,
-            )}`, // Convert the order to a JSON into a readable format
+            html: this.getUpdateOrderEmailTemplate(order, updatedBy),
         }
 
         this.transporter.sendMail(mailOptions, (error, info) => {
@@ -62,14 +62,10 @@ export class EmailService {
 
     async sendOrderDeletedEmail(to: string, order: Order): Promise<void> {
         const mailOptions = {
-            from: 'trackease3@gmail.com',
+            from: process.env.EMAIL,
             to: to,
             subject: 'Order Deleted',
-            text: `An order has been Deleted.\n\n Order details: ${JSON.stringify(
-                order,
-                null,
-                4,
-            )}`, // Convert the order to a JSON into a readable format
+            html: this.getDeleteOrderEmailTemplate(order),
         }
 
         this.transporter.sendMail(mailOptions, (error, info) => {
@@ -112,52 +108,92 @@ export class EmailService {
         })
     }
 
-    // TODO: To be included here information for the seller, each items price, time of purchase
+    private getCreateOrderEmailTemplate(order: Order) {
+        const orderItemsHtml = this.convertOrderToHtml(order)
+        return `
+            <h3>Peshendetje ${order.client?.nickname}!</h3>
+            <p>Porosia juaj per daten: ${new Date(
+                order.created_at,
+            ).toLocaleDateString()}</p>
+            <p>Eshte krijuar me sukses.</p>
+            ${orderItemsHtml}
+        `
+    }
+
+    private getUpdateOrderEmailTemplate(order: Order, updatedBy: string) {
+        const orderItemsHtml = this.convertOrderToHtml(order)
+        return `
+            <h3>An order has been updated by ${updatedBy}!<h3>
+            <p>This is the updated Order: ${new Date(
+                order.created_at,
+            ).toLocaleDateString()}</p>
+            ${orderItemsHtml}
+        `
+    }
+
+    private getDeleteOrderEmailTemplate(order: Order) {
+        const orderItemsHtml = this.convertOrderToHtml(order)
+        return `
+            <h3>An order has been deleted by <unknown>!</h3>
+            <p>This is the deleted Order: ${new Date(
+                order.created_at,
+            ).toLocaleDateString()}</p>
+            ${orderItemsHtml}
+        `
+    }
+
     private convertOrderToHtml(order: any): string {
         const orderItemsHtml = order.order_items
             .map(
                 (item: any) => `
-            <tr>
-                <td style="border: 1px solid black; padding: 10px;">${
-                    item.product?.product_name
-                }</td>
-                <td style="border: 1px solid black; padding: 10px;">${
-                    item.quantity
-                }</td>
-                <td style="border: 1px solid black; padding: 10px;">${
-                    item.returned_quantity
-                }</td>
-                <td style="border: 1px solid black; padding: 10px;">${
-                    item.product?.price
-                }</td>
-                <td style="border: 1px solid black; padding: 10px;">${new Date(
-                    order.created_at,
-                ).toLocaleDateString()}</td>
-            </tr>
-        `,
+                <tr>
+                    <td style="border: 1px solid black; padding: 10px;">${
+                        order.seller?.first_name + ' ' + order.seller?.last_name
+                    }</td>
+                    <td style="border: 1px solid black; padding: 10px;">${
+                        item.product?.product_name
+                    }</td>
+                    <td style="border: 1px solid black; padding: 10px;">${
+                        item.quantity
+                    }</td>
+                    <td style="border: 1px solid black; padding: 10px;">${
+                        item.returned_quantity
+                    }</td>
+                    <td style="border: 1px solid black; padding: 10px;">${
+                        item.product?.price
+                    }</td>
+                    <td style="border: 1px solid black; padding: 10px;">${
+                        item.order_item_total_price
+                    }</td>
+                    <td style="border: 1px solid black; padding: 10px;">${new Date(
+                        order.created_at,
+                    ).toLocaleDateString()}</td>
+                    <td style="border: 1px solid black; padding: 10px;">${new Intl.DateTimeFormat(
+                        'default',
+                        { hour: '2-digit', minute: '2-digit', hour12: false },
+                    ).format(new Date(order.created_at))}</td>
+                </tr>`,
             )
             .join('')
 
         return `
-            <h3>Peshendetje ${order.client?.nickname}</h3>
-            <p>Porosia juaj per daten: ${new Date(
-                order.created_at,
-            ).toLocaleDateString()}</p>
-            \n
             <table style="border: 1px solid black; border-collapse: collapse;">
                 <thead>
                     <tr>
+                        <th style="border: 1px solid black; padding: 10px;">Seller</th>
                         <th style="border: 1px solid black; padding: 10px;">Product</th>
                         <th style="border: 1px solid black; padding: 10px;">Quantity</th>
                         <th style="border: 1px solid black; padding: 10px;">Return</th>
-                        <th style="border: 1px solid black; padding: 10px;">Price</th>
+                        <th style="border: 1px solid black; padding: 10px;">Item Price</th>
+                        <th style="border: 1px solid black; padding: 10px;">Order Price</th>
                         <th style="border: 1px solid black; padding: 10px;">Date</th>
+                        <th style="border: 1px solid black; padding: 10px;">Time</th>
                     </tr>
                 </thead>
                 <tbody>
                     ${orderItemsHtml}
                     <tr>
-                        <td colspan="5" style="border: 1px solid black; padding: 10px;">Total Price= ${
+                        <td colspan="8" style="border: 1px solid black; padding: 10px;">Total Price= ${
                             order.total_price
                         }</td>
                     </tr>

@@ -1,13 +1,4 @@
-import {
-    Body,
-    Controller,
-    Delete,
-    Get,
-    Param,
-    Post,
-    Put,
-    Query,
-} from '@nestjs/common'
+import { Body, Controller, Delete, Get, Param, Post, Put } from '@nestjs/common'
 import { Product } from './product.entity'
 import { ProductsService } from './products.service'
 
@@ -30,6 +21,11 @@ export class ProductsController {
         return this.productsService.getProductById(id)
     }
 
+    @Get('price/:id')
+    getProductPriceById(@Param('id') id: number) {
+        return this.productsService.getProductPriceById(id)
+    }
+
     @Put('/:id')
     async updateProductDetails(
         @Param('id') id: number,
@@ -43,11 +39,12 @@ export class ProductsController {
         return this.productsService.deleteProductById(id)
     }
 
+    // Used in the search bar
     @Post('/search')
     searchForProducts(
         @Body('pagination') pagination: { offset: number; limit: number },
         @Body('filters')
-            productFilters: {
+        productFilters: {
             minPrice: number
             maxPrice: number
             queryString: string
@@ -60,6 +57,18 @@ export class ProductsController {
             productFilters,
             searchOptions,
             getCount,
+        )
+    }
+
+    // Used in the dropdown to create Order
+    @Post('/paginated/search')
+    searchForProductsPaginated(
+        @Body('pagination') pagination: { offset: number; limit: number },
+        @Body('productName') productName: string,
+    ) {
+        return this.productsService.searchForProductsPaginated(
+            pagination,
+            productName,
         )
     }
 }

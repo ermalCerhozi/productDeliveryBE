@@ -10,7 +10,7 @@ import { EmailService } from 'src/email.service'
     imports: [
         TypeOrmModule.forFeature([User]),
         JwtModule.register({
-            secret: 'secret', // usually should be stored in .env file and not like this. EX: process.env.JWT_SECRET
+            secret: 'secret', //TODO: usually should be stored in .env file and not like this. EX: process.env.JWT_SECRET
             signOptions: { expiresIn: '7d' }, // token will expire in 7 days
         }),
     ],

@@ -26,17 +26,7 @@ export class OrdersController {
     @Post()
     async createOrder(@Body() order: Order): Promise<Order> {
         const createdOrder = await this.ordersService.createOrder(order)
-
-        //Get the client's email
-        const client = await this.userService.getUserById(
-            order.client as unknown as number,
-        )
-
-        //Send the Order Created email to the client
-        await this.emailService.sendOrderCreatedEmail(
-            client.email,
-            createdOrder,
-        )
+        await this.emailService.sendOrderCreatedEmail(createdOrder)
         return createdOrder
     }
 
@@ -73,18 +63,16 @@ export class OrdersController {
     //TODO: In the future, send the name of the user that deleted the order to the admin
     @Delete(':id')
     async deleteOrder(@Param('id') id: string): Promise<any> {
-        const deletedOrder = await this.ordersService.getOrderById(id)
+        const orderToBeDeleted = await this.ordersService.deleteOrder(id)
 
         //Get the workspace Admin's email
         const admin = await this.userService.getAllAdminUsers()
 
         //Send the Order Updated email to the Admin
-        await this.emailService.sendOrderDeletedEmail(
+        return await this.emailService.sendOrderDeletedEmail(
             admin[0].email, //TODO: have a single admin user, or send the email to all admin users...
-            deletedOrder,
+            orderToBeDeleted,
         )
-
-        return deletedOrder
     }
 
     @Get('client/:clientId')
@@ -101,10 +89,9 @@ export class OrdersController {
     getFilteredOrders(
         @Body('filters')
         filters: {
-            startDate?: Date
-            endDate?: Date
-            clientId?: number
-            sellerId?: number
+            date?: Date
+            clientIds?: number[]
+            sellerIds?: number[]
         },
         @Body('getCount') getCount: boolean,
         @Body('pagination') pagination: { offset: number; limit: number },

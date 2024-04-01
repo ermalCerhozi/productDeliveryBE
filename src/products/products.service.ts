@@ -18,6 +18,16 @@ export class ProductsService {
         return this.productsRepository.findOne({ where: { id: id } })
     }
 
+    async getProductPriceById(id: number): Promise<number> {
+        const product = await this.productsRepository
+            .createQueryBuilder('product')
+            .select('product.price')
+            .where('product.id = :id', { id })
+            .getOne()
+
+        return product ? product.price : null
+    }
+
     async deleteProductById(id: number): Promise<void> {
         await this.productsRepository.delete(id)
     }
@@ -86,5 +96,25 @@ export class ProductsService {
 
         const products = await query.getMany()
         return getCount ? { products, count } : { products }
+    }
+
+    async searchForProductsPaginated(
+        pagination: { offset: number; limit: number },
+        productName: string,
+    ) {
+        let query = this.productsRepository.createQueryBuilder('product')
+
+        if (productName) {
+            query = query.andWhere(
+                'LOWER(product.product_name) LIKE :productName',
+                {
+                    productName: `%${productName}%`.toLowerCase(),
+                },
+            )
+        }
+
+        query = query.skip(pagination.offset).take(pagination.limit)
+        const products = await query.getMany()
+        return products
     }
 }

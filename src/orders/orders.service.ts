@@ -1,13 +1,12 @@
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { DeleteResult, Repository } from 'typeorm'
-import { UpdateResult } from 'typeorm'
+import { DeleteResult, Repository, UpdateResult, getRepository } from 'typeorm'
 import { Order } from './order.entity'
 import { OrderItem } from '../order-items/orderItem.entity'
 import { Product } from '../products/product.entity'
-import { getRepository } from 'typeorm'
 import * as pdfMake from 'pdfmake/build/pdfmake'
 import * as pdfFonts from 'pdfmake/build/vfs_fonts'
+import { constrainedMemory } from 'process'
 
 @Injectable()
 export class OrdersService {
@@ -21,7 +20,6 @@ export class OrdersService {
     ) {}
 
     async createOrder(orderData: any): Promise<Order> {
-        console.log('orderData', orderData)
         const { client, seller, order_items } = orderData
 
         // Create and save the order
@@ -31,11 +29,12 @@ export class OrdersService {
 
         order = await this.ordersRepository.save(order)
 
-        let total_price = 0 // Initialize total_price
+        let orderTotalPrice = 0 // Initialize total_price
 
         // Loop  through the order_items, create and save them
         for (const item of order_items) {
             const { quantity, returned_quantity, product } = item
+            let orderItemTotalPrice = 0
 
             // Ensure the product exists
             const productEntity = await this.productsRepository.findOne({
@@ -46,27 +45,34 @@ export class OrdersService {
                 throw new Error(`Product with ID ${product} not found`) // use product directly as an ID
             }
 
-            // Calculate total_price
-            total_price += productEntity.price * (quantity - returned_quantity)
+            orderItemTotalPrice +=
+                productEntity.price * (quantity - returned_quantity)
+            orderTotalPrice += orderItemTotalPrice
 
             const orderItem = this.orderItemsRepository.create({
                 order: order,
                 product: productEntity,
                 quantity,
                 returned_quantity,
+                order_item_total_price: orderItemTotalPrice,
             })
 
             await this.orderItemsRepository.save(orderItem)
         }
 
         // Update the total_price of the order
-        order.total_price = total_price
+        order.total_price = orderTotalPrice
         await this.ordersRepository.save(order)
 
         // Return the newly created order
         return this.ordersRepository.findOne({
             where: { id: order.id },
-            relations: ['order_items', 'order_items.product'],
+            relations: [
+                'client',
+                'seller',
+                'order_items',
+                'order_items.product',
+            ],
         })
     }
 
@@ -88,14 +94,7 @@ export class OrdersService {
     }
 
     async updateOrder(id: string, order: Partial<Order>): Promise<any> {
-        const { client, order_items } = order
-
-        const updatedOrder: UpdateResult = await this.ordersRepository.update(
-            parseInt(id, 10),
-            {
-                client,
-            },
-        )
+        const { order_items } = order
 
         let total_price = 0 // Initialize total_price
 
@@ -137,26 +136,38 @@ export class OrdersService {
         // Update the total_price of the order
         await this.ordersRepository.update(parseInt(id, 10), { total_price })
 
-        const orderWithRelations = await this.ordersRepository.findOne({
+        return await this.ordersRepository.findOne({
             where: { id: parseInt(id, 10) },
-            relations: ['order_items', 'order_items.product'],
+            relations: [
+                'client',
+                'seller',
+                'order_items',
+                'order_items.product',
+            ],
         })
-
-        return {
-            updatedOrder,
-            orderWithRelations,
-        }
     }
 
-    async deleteOrder(id: string): Promise<DeleteResult> {
-        // first, find all OrderItem entities with the specified Order ID and delete them
-        const items = await this.orderItemsRepository.find({
-            where: { order: { id: parseInt(id, 10) } },
+    async deleteOrder(id: string): Promise<Order> {
+        const orderToBeDeleted = await this.ordersRepository.findOne({
+            where: { id: parseInt(id, 10) },
+            relations: [
+                'client',
+                'seller',
+                'order_items',
+                'order_items.product',
+            ],
         })
-        await this.orderItemsRepository.remove(items)
 
-        // then, delete the Order
-        return this.ordersRepository.delete(parseInt(id, 10))
+        if (!orderToBeDeleted) {
+            throw new Error(`Order with ID ${id} not found`)
+        }
+
+        // Delete order items and the order
+        await this.orderItemsRepository.remove(orderToBeDeleted.order_items)
+        await this.ordersRepository.delete(parseInt(id, 10))
+
+        // return the deleted order
+        return orderToBeDeleted
     }
 
     getOrdersByClientId(client_id: string): Promise<Order[]> {
@@ -192,8 +203,6 @@ export class OrdersService {
         getCount: boolean,
         pagination?: any,
     ): Promise<{ orders: Order[]; count?: number }> {
-        console.log('filters', filters)
-
         const query = this.ordersRepository.createQueryBuilder('order')
 
         // Join the related entities
@@ -202,25 +211,31 @@ export class OrdersService {
         query.leftJoinAndSelect('order.order_items', 'order_items')
         query.leftJoinAndSelect('order_items.product', 'product')
 
-        if (filters.startDate && filters.endDate) {
-            const startDate = new Date(filters.startDate).toISOString()
-            const endDate = new Date(filters.endDate).toISOString()
+        if (filters.date) {
+            if (filters.date === 'last-24h') {
+                query.andWhere('order.created_at > NOW() - INTERVAL 1 DAY')
+            } else if (filters.date === 'last-48h') {
+                query.andWhere('order.created_at > NOW() - INTERVAL 2 DAY')
+            } else if (filters.date === 'last-72h') {
+                query.andWhere('order.created_at > NOW() - INTERVAL 3 DAY')
+            } else if (filters.date === 'last-7days') {
+                query.andWhere('order.created_at > NOW() - INTERVAL 7 DAY')
+            } else if (filters.date === 'last-30days') {
+                query.andWhere('order.created_at > NOW() - INTERVAL 30 DAY')
+            } else if (filters.date === 'last-12months') {
+                query.andWhere('order.created_at > NOW() - INTERVAL 1 YEAR')
+            }
+        }
 
-            query.andWhere('order.created_at BETWEEN :startDate AND :endDate', {
-                startDate,
-                endDate,
+        if (filters.clientIds && filters.clientIds.length > 0) {
+            query.andWhere('order.client_id IN (:...clientIds)', {
+                clientIds: filters.clientIds,
             })
         }
 
-        if (filters.clientId) {
-            query.andWhere('order.client_id = :clientId', {
-                clientId: filters.clientId,
-            })
-        }
-
-        if (filters.sellerId) {
-            query.andWhere('order.seller_id = :sellerId', {
-                sellerId: filters.sellerId,
+        if (filters.sellerIds && filters.sellerIds.length > 0) {
+            query.andWhere('order.seller_id IN (:...sellerIds)', {
+                sellerIds: filters.sellerIds,
             })
         }
 
@@ -327,7 +342,9 @@ export class OrdersService {
         const endDateObj = new Date(endDate)
         const dateRange =
             startDate && endDate
-                ? `${startDateObj.toLocaleDateString('en-GB')} to ${endDateObj.toLocaleDateString('en-GB')}`
+                ? `${startDateObj.toLocaleDateString(
+                      'en-GB',
+                  )} to ${endDateObj.toLocaleDateString('en-GB')}`
                 : 'No date range provided'
 
         const documentDefinition = {
@@ -377,7 +394,7 @@ export class OrdersService {
         }
 
         const pdfDoc = pdfMake.createPdf(documentDefinition)
-        return new Promise((resolve, reject) => {
+        return new Promise((resolve) => {
             pdfDoc.getBuffer((buffer) => {
                 resolve(buffer)
             })
