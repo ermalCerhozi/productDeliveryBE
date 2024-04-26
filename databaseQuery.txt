@@ -62,7 +62,7 @@ CREATE TABLE `order_items` (
   `order_id` int DEFAULT NULL,
   `product_id` int DEFAULT NULL,
   `quantity` int NOT NULL,
-  `order_item_total_price` DECIMAL(8,2) NOT NULL DEFAULT 0.00,,
+  `order_item_total_price` DECIMAL(8,2) NOT NULL DEFAULT 0.00,
   FOREIGN KEY (`order_id`) REFERENCES `orders`(`id`),
   FOREIGN KEY (`product_id`) REFERENCES `products`(`id`),
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,

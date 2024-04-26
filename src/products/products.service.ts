@@ -18,14 +18,28 @@ export class ProductsService {
         return this.productsRepository.findOne({ where: { id: id } })
     }
 
-    async getProductPriceById(id: number): Promise<number> {
-        const product = await this.productsRepository
-            .createQueryBuilder('product')
-            .select('product.price')
-            .where('product.id = :id', { id })
-            .getOne()
+    async getProductPricesByIds(
+        ids: number[],
+    ): Promise<{ [key: string]: number }> {
+        const result: { [key: string]: number } = {}
 
-        return product ? product.price : null
+        const uniqueIds = Array.from(new Set(ids))
+        const validIds = uniqueIds.filter((id) => id !== null)
+
+        for (const id of validIds) {
+            const product = await this.productsRepository
+                .createQueryBuilder('product')
+                .select(['product.product_name', 'product.price'])
+                .whereInIds(id)
+                .getOne()
+
+            if (product) {
+                result[product.product_name] = product.price
+            }
+        }
+
+        console.log('result', result)
+        return result
     }
 
     async deleteProductById(id: number): Promise<void> {

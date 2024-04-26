@@ -111,7 +111,7 @@ export class EmailService {
     private getCreateOrderEmailTemplate(order: Order) {
         const orderItemsHtml = this.convertOrderToHtml(order)
         return `
-            <h3>Peshendetje ${order.client?.nickname}!</h3>
+            <h3>Pershendetje ${order.client?.nickname}!</h3>
             <p>Porosia juaj per daten: ${new Date(
                 order.created_at,
             ).toLocaleDateString()}</p>
@@ -193,9 +193,7 @@ export class EmailService {
                 <tbody>
                     ${orderItemsHtml}
                     <tr>
-                        <td colspan="8" style="border: 1px solid black; padding: 10px;">Total Price= ${
-                            order.total_price
-                        }</td>
+                        <td colspan="8" style="border: 1px solid black; padding: 10px;">Total Price= ${order.total_price}</td>
                     </tr>
                 </tbody>
             </table>

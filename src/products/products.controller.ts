@@ -11,6 +11,11 @@ export class ProductsController {
         return this.productsService.createProduct(product)
     }
 
+    @Post('price')
+    getProductPricesByIds(@Body() ids: number[]) {
+        return this.productsService.getProductPricesByIds(ids)
+    }
+
     @Get()
     getAllProducts() {
         return this.productsService.getAllProducts()
@@ -19,11 +24,6 @@ export class ProductsController {
     @Get('/:id')
     getProductById(@Param('id') id: number) {
         return this.productsService.getProductById(id)
-    }
-
-    @Get('price/:id')
-    getProductPriceById(@Param('id') id: number) {
-        return this.productsService.getProductPriceById(id)
     }
 
     @Put('/:id')
