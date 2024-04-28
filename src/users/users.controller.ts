@@ -25,10 +25,15 @@ export class UsersController {
 
     @Post()
     async createUser(@Body() userData: User): Promise<UserResponseDTO> {
-        const hashedPassword = await bcrypt.hash(userData.password, 10)
-        userData.password = hashedPassword
+        const password = userData.first_name + '.' + userData.last_name
+        const saltRounds = 10
+        const hashedPassword = await bcrypt.hash(password, saltRounds)
+
+        userData['password'] = hashedPassword
+
         const createdUser = await this.usersService.createUser(userData)
 
+        //TODO: Send email to user with password
         return new UserResponseDTO(createdUser)
     }
 

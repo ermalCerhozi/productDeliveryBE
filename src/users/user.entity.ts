@@ -38,7 +38,7 @@ export class User {
     role: string
 
     @Column({ length: 64 })
-    password: string
+    password?: string
 
     @Column({ length: 500 })
     location: string
