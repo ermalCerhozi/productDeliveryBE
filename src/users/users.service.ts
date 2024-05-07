@@ -190,12 +190,15 @@ export class UsersService {
         if (sellerName !== undefined) {
             const searchQuery = `%${sellerName}%`.toLowerCase()
             query = query.andWhere(
-                'LOWER(user.first_name) LIKE :searchQuery OR LOWER(user.last_name) LIKE :searchQuery OR LOWER(user.email) LIKE :searchQuery OR LOWER(user.phone_number) LIKE :searchQuery',
+                'LOWER(user.first_name) LIKE :searchQuery OR LOWER(user.last_name) LIKE :searchQuery',
                 { searchQuery },
             )
         }
 
-        query = query.andWhere('user.role = :role', { role: 'seller' })
+        // Admin is also a seller, he can place orders
+        query = query.andWhere('user.role IN (:...roles)', {
+            roles: ['seller', 'admin'],
+        })
 
         query = query.skip(pagination.offset).take(pagination.limit)
         query = query.orderBy('user.created_at', 'DESC')
